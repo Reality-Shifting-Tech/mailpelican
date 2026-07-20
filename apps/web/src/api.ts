@@ -75,6 +75,12 @@ export interface PreparedCampaign {
   approvalRequired: boolean;
 }
 
+export interface ImportSummary {
+  created: number;
+  existing: number;
+  rejected: { email: string; reason: string }[];
+}
+
 export class ApiError extends Error {
   readonly status: number;
 
@@ -157,6 +163,13 @@ export function createApi(getKey: () => string | null, onUnauthorized: () => voi
       call<AudienceList>("POST", "/v1/lists", { name, description }),
     listContacts: (cursor: string | null) =>
       call<Page<Contact>>("GET", page("/v1/contacts", cursor)),
+    importContacts: (listId: string, emails: string[]) =>
+      call<ImportSummary>(
+        "POST",
+        "/v1/contacts/import",
+        { listId, source: "console", contacts: emails.map((email) => ({ email })) },
+        { "idempotency-key": crypto.randomUUID() },
+      ),
   };
 }
 
