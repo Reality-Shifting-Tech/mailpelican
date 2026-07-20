@@ -37,10 +37,12 @@ bootstrap` command creates the first workspace + owner key. Argon2id
    `@dispatch/render` pipeline (ADR-0002) compiles `design_json` to HTML/text
    inline on the immutable template version at authoring time, and campaign
    versions carry the complete message definition inline. Sender
-   identity verification is an explicit operator action (`POST
-/sender-identities/:id/verify`) returning placeholder DNS records; live
-   SPF/DKIM/DMARC checks land with the onboarding UI. `approval_threshold` on
-   API keys is enforced at confirm-send and schedule: above it the caller
+   identity verification runs live DNS checks (`POST
+/sender-identities/:id/verify`): expected SPF/DMARC/CNAME records must
+   resolve or the identity flips to failed (422 with per-record detail);
+   provider-pending placeholders (`dkim.pending`) are skipped until the
+   relay driver supplies real keys. `approval_threshold` on API keys is
+   enforced at confirm-send and schedule: above it the caller
    must re-confirm with `approved: true` (`send_limit` remains a hard cap).
 
 ## Consequences

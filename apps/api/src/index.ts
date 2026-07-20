@@ -5,6 +5,7 @@ import { decryptSecret } from "@dispatch/domain";
 import { createRelayProvider } from "@dispatch/relays";
 import { eq, sql } from "drizzle-orm";
 import { Redis } from "ioredis";
+import { resolveCname, resolveTxt } from "node:dns/promises";
 import { createApp } from "./app.js";
 import type { Deps } from "./deps.js";
 
@@ -34,6 +35,13 @@ const deps: Deps = {
     }
     const credentials = decryptSecret(relay.credentialsEncrypted, env.CREDENTIAL_ENCRYPTION_KEY);
     return createRelayProvider(relay.type, credentials, relay.config);
+  },
+  resolveDns: async (name, recordType) => {
+    if (recordType === "CNAME") {
+      return resolveCname(name);
+    }
+    const chunks = await resolveTxt(name);
+    return chunks.map((parts) => parts.join(""));
   },
 };
 

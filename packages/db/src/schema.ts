@@ -245,7 +245,10 @@ export const senderIdentities = pgTable(
     replyTo: text("reply_to"),
     returnPath: text("return_path"),
     verificationStatus: verificationStatusEnum("verification_status").notNull().default("pending"),
-    dnsRecords: jsonb("dns_records").$type<Record<string, unknown>[]>().notNull().default([]),
+    dnsRecords: jsonb("dns_records")
+      .$type<{ type: string; name: string; value: string }[]>()
+      .notNull()
+      .default([]),
     trackingDomain: text("tracking_domain"),
     createdAt: createdAt(),
   },

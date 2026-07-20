@@ -16,6 +16,7 @@ export interface TestContext {
   rawKey: string;
   providers: Map<string, RelayProvider & { sent?: unknown[] }>;
   fakeRelay: FakeRelay;
+  deps: Deps;
   close: () => Promise<void>;
 }
 
@@ -76,6 +77,9 @@ export async function createTestContext(options: SeedOptions = {}): Promise<Test
       providers.set(relayId, fakeRelay);
       return fakeRelay;
     },
+    // DNS always verifies in tests unless a test installs its own resolver.
+    resolveDns: async (name) =>
+      name.startsWith("_dmarc.") ? ["v=DMARC1; p=quarantine"] : ["v=spf1 include:test ~all"],
   };
   return {
     app: createApp(deps),
@@ -84,6 +88,7 @@ export async function createTestContext(options: SeedOptions = {}): Promise<Test
     rawKey: issued.raw,
     providers,
     fakeRelay,
+    deps,
     close,
   };
 }

@@ -1,7 +1,7 @@
 import { createRoute, z } from "@hono/zod-openapi";
 import { relays, senderIdentities } from "@dispatch/db";
 import type { RelayCapabilitiesValue } from "@dispatch/db";
-import { encryptSecret } from "@dispatch/domain";
+import { encryptSecret, checkDnsRecords, DomainError } from "@dispatch/domain";
 import { and, asc, eq, gt } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import type { Deps, Principal } from "../deps.js";
@@ -231,27 +231,49 @@ export function senderIdentityRoutes(deps: Deps) {
       path: "/{id}/verify",
       tags: ["sender-identities"],
       request: { params: idParamSchema },
-      responses: { ...jsonOk(dataSchema, "Verification result."), ...problemResponses(404) },
+      responses: { ...jsonOk(dataSchema, "Verification result."), ...problemResponses(404, 422) },
     }),
     async (c) => {
       const p = c.get("principal") as Principal;
-      // M1 has no live DNS checker; verification is an explicit operator act
-      // after they publish the DNS records returned at creation time.
-      const rows = await deps.db
-        .update(senderIdentities)
-        .set({ verificationStatus: "verified" })
+      const found = await deps.db
+        .select()
+        .from(senderIdentities)
         .where(
           and(
             eq(senderIdentities.id, c.req.valid("param").id),
             eq(senderIdentities.workspaceId, p.workspaceId),
           ),
         )
-        .returning();
-      if (rows[0] === undefined) {
+        .limit(1);
+      const identity = found[0];
+      if (identity === undefined) {
         throw new HTTPException(404, { message: "Sender identity not found." });
       }
-      await audit(deps.db, p, "sender_identity.verify", "sender_identity", rows[0].id);
-      return c.json(rows[0], 200);
+      // Live DNS check against the records issued at creation (ADR-0004):
+      // every expected record must resolve before mail may send as this
+      // identity. Failures flip the status to failed with per-record detail.
+      const check = await checkDnsRecords(identity.dnsRecords, deps.resolveDns);
+      if (!check.ok) {
+        const missing = check.results
+          .filter((result) => !result.found)
+          .map((result) => `${result.record.type} ${result.record.name}`);
+        await deps.db
+          .update(senderIdentities)
+          .set({ verificationStatus: "failed" })
+          .where(eq(senderIdentities.id, identity.id));
+        throw new DomainError(
+          "dns_unverified",
+          `DNS records not found: ${missing.join(", ")}. Publish them and verify again.`,
+          422,
+        );
+      }
+      const rows = await deps.db
+        .update(senderIdentities)
+        .set({ verificationStatus: "verified" })
+        .where(eq(senderIdentities.id, identity.id))
+        .returning();
+      await audit(deps.db, p, "sender_identity.verify", "sender_identity", identity.id);
+      return c.json({ ...rows[0], dns: check.results }, 200);
     },
   );
 
