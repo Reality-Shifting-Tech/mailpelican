@@ -34,6 +34,15 @@ body {
   letter-spacing: -0.02em;
 }
 
+section {
+  margin-bottom: 32px;
+}
+
+section h3 {
+  margin: 0 0 4px;
+  font-size: 16px;
+}
+
 nav.tabs {
   display: flex;
   gap: 16px;

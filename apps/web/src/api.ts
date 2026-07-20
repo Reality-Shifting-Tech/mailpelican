@@ -93,6 +93,28 @@ export interface SpamScore {
   symbols: { name: string; score: number; description: string | null }[];
 }
 
+export interface DmarcStats {
+  domain: string;
+  reports: number;
+  messages: number;
+  dispositions: Record<string, number>;
+  spf: Record<string, number>;
+  dkim: Record<string, number>;
+  topSources: { ip: string; count: number }[];
+  latestReport: { orgName: string; dateEnd: string } | null;
+}
+
+export interface Relay {
+  id: string;
+  name: string;
+  type: string;
+  status: string;
+  rateLimit: number | null;
+  warmupDays: number | null;
+  warmupStartedAt: string | null;
+  currentWarmupDailyCap: number | null;
+}
+
 export class ApiError extends Error {
   readonly status: number;
 
@@ -189,6 +211,16 @@ export function createApi(getKey: () => string | null, onUnauthorized: () => voi
       }
       return call<DeliverabilityReport>("GET", `/v1/deliverability/check?${params.toString()}`);
     },
+    ingestDmarcReport: (xml: string) =>
+      call<{ stored: boolean; reason?: string }>("POST", "/v1/deliverability/dmarc-reports", {
+        xml,
+      }),
+    dmarcStats: (domain: string) =>
+      call<DmarcStats>(
+        "GET",
+        `/v1/deliverability/dmarc-reports?domain=${encodeURIComponent(domain)}`,
+      ),
+    listRelays: (cursor: string | null) => call<Page<Relay>>("GET", page("/v1/relays", cursor)),
   };
 }
 
