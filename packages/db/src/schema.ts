@@ -1,4 +1,5 @@
 import { sql } from "drizzle-orm";
+import type { DmarcPolicy, DmarcRecord } from "@mailpelican/domain";
 import {
   boolean,
   integer,
@@ -484,6 +485,30 @@ export const inboundWebhookEvents = pgTable(
   (t) => [uniqueIndex("inbound_webhook_events_dedup_unique").on(t.relayId, t.payloadHash)],
 );
 
+/**
+ * Parsed DMARC aggregate (rua) reports — the free daily authentication
+ * telemetry mailbox providers send domain owners. `payloadHash` of the raw
+ * XML makes ingestion idempotent across replays and duplicate deliveries.
+ */
+export const dmarcReports = pgTable(
+  "dmarc_reports",
+  {
+    id: id(),
+    workspaceId: workspaceId(),
+    /** The domain the report's policy was published for. */
+    domain: text("domain").notNull(),
+    orgName: text("org_name").notNull(),
+    reportId: text("report_id").notNull().default(""),
+    dateBegin: timestamp("date_begin", { withTimezone: true }).notNull(),
+    dateEnd: timestamp("date_end", { withTimezone: true }).notNull(),
+    policy: jsonb("policy").$type<DmarcPolicy>().notNull(),
+    records: jsonb("records").$type<DmarcRecord[]>().notNull(),
+    payloadHash: text("payload_hash").notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex("dmarc_reports_workspace_hash_unique").on(t.workspaceId, t.payloadHash)],
+);
+
 export const outboxStatuses = ["pending", "dispatched", "dead"] as const;
 export const outboxStatusEnum = pgEnum("outbox_status", outboxStatuses);
 
@@ -569,6 +594,7 @@ export type CampaignVersion = typeof campaignVersions.$inferSelect;
 export type CampaignRecipient = typeof campaignRecipients.$inferSelect;
 export type Message = typeof messages.$inferSelect;
 export type Event = typeof events.$inferSelect;
+export type DmarcReport = typeof dmarcReports.$inferSelect;
 export type InboundWebhookEvent = typeof inboundWebhookEvents.$inferSelect;
 export type OutboxRow = typeof outbox.$inferSelect;
 export type SendConfirmation = typeof sendConfirmations.$inferSelect;

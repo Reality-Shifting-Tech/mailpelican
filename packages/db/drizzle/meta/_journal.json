@@ -15,6 +15,13 @@
       "when": 1784549303588,
       "tag": "0001_worried_bloodstrike",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1784584666997,
+      "tag": "0002_eminent_roland_deschain",
+      "breakpoints": true
     }
   ]
 }
