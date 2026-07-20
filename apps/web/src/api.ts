@@ -51,6 +51,7 @@ export interface CampaignPreview {
   lint: LintIssue[];
   samples: { email: string; subject: string; html: string; text: string }[];
   recipientCounts: Record<string, number>;
+  spam: SpamScore | null;
 }
 
 export interface CampaignDraftInput {
@@ -79,6 +80,17 @@ export interface ImportSummary {
   created: number;
   existing: number;
   rejected: { email: string; reason: string }[];
+}
+
+export interface DeliverabilityReport {
+  ok: boolean;
+  checks: { name: string; ok: boolean; detail: string }[];
+}
+
+export interface SpamScore {
+  score: number;
+  action: string;
+  symbols: { name: string; score: number; description: string | null }[];
 }
 
 export class ApiError extends Error {
@@ -170,6 +182,13 @@ export function createApi(getKey: () => string | null, onUnauthorized: () => voi
         { listId, source: "console", contacts: emails.map((email) => ({ email })) },
         { "idempotency-key": crypto.randomUUID() },
       ),
+    checkDeliverability: (domain: string, ip: string) => {
+      const params = new URLSearchParams({ domain });
+      if (ip.length > 0) {
+        params.set("ip", ip);
+      }
+      return call<DeliverabilityReport>("GET", `/v1/deliverability/check?${params.toString()}`);
+    },
   };
 }
 

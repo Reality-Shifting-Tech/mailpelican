@@ -2,9 +2,10 @@ import { useMemo, useState } from "react";
 import { createApi, loadApiKey, storeApiKey, clearApiKey } from "./api.js";
 import { CampaignsView } from "./views/Campaigns.js";
 import { ContactsView } from "./views/Contacts.js";
+import { DeliverabilityView } from "./views/Deliverability.js";
 import { ListsView } from "./views/Lists.js";
 
-type Tab = "campaigns" | "lists" | "contacts";
+type Tab = "campaigns" | "lists" | "contacts" | "deliverability";
 
 function KeyGate({ onKey }: { onKey: (key: string) => void }) {
   const [value, setValue] = useState("");
@@ -63,7 +64,7 @@ export function App() {
       <header className="shell-header">
         <h1>dispatch</h1>
         <nav className="tabs">
-          {(["campaigns", "lists", "contacts"] as const).map((name) => (
+          {(["campaigns", "lists", "contacts", "deliverability"] as const).map((name) => (
             <button
               key={name}
               className={tab === name ? "active" : ""}
@@ -86,6 +87,7 @@ export function App() {
       {tab === "campaigns" && <CampaignsView api={api} />}
       {tab === "lists" && <ListsView api={api} />}
       {tab === "contacts" && <ContactsView api={api} />}
+      {tab === "deliverability" && <DeliverabilityView api={api} />}
     </main>
   );
 }

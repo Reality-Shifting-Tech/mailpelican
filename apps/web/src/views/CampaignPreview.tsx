@@ -50,6 +50,16 @@ export function PreviewPanel({ api, campaignId }: { api: Api; campaignId: string
           ))}
         </ul>
       )}
+      {preview.spam !== null && (
+        <p className={preview.spam.score >= 5 ? "error" : "muted"}>
+          Spam score: {preview.spam.score.toFixed(1)} ({preview.spam.action})
+          {preview.spam.symbols.length > 0 &&
+            ` — top rules: ${preview.spam.symbols
+              .slice(0, 3)
+              .map((symbol) => symbol.name)
+              .join(", ")}`}
+        </p>
+      )}
       {sample !== undefined && (
         <div>
           <p className="muted">
