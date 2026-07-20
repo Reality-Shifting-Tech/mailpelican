@@ -201,6 +201,37 @@ importers:
         specifier: ^3.1.0
         version: 3.2.7(@types/node@22.20.1)(tsx@4.23.1)(yaml@2.9.0)
 
+  packages/queue:
+    dependencies:
+      '@dispatch/db':
+        specifier: workspace:*
+        version: link:../db
+      '@dispatch/domain':
+        specifier: workspace:*
+        version: link:../domain
+      bullmq:
+        specifier: ^5.48.0
+        version: 5.80.9
+      drizzle-orm:
+        specifier: ^0.43.1
+        version: 0.43.1(@electric-sql/pglite@0.3.16)(@types/pg@8.20.0)(pg@8.22.0)
+      ioredis:
+        specifier: ^5.6.0
+        version: 5.11.1
+      zod:
+        specifier: ^3.24.3
+        version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: ^22.15.0
+        version: 22.20.1
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.1.0
+        version: 3.2.7(@types/node@22.20.1)(tsx@4.23.1)(yaml@2.9.0)
+
   packages/relays:
     dependencies:
       '@aws-sdk/client-sesv2':

@@ -1,0 +1,31 @@
+{
+  "name": "@dispatch/queue",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsc -p tsconfig.build.json --watch",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@dispatch/db": "workspace:*",
+    "@dispatch/domain": "workspace:*",
+    "bullmq": "^5.48.0",
+    "drizzle-orm": "^0.43.1",
+    "ioredis": "^5.6.0",
+    "zod": "^3.24.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.0"
+  }
+}
