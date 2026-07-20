@@ -1,5 +1,6 @@
 import { createRoute, z } from "@hono/zod-openapi";
 import { templates, templateVersions } from "@dispatch/db";
+import { DESIGN_SCHEMA_VERSION, designDocumentSchema, renderDesign } from "@dispatch/render";
 import { createHash } from "node:crypto";
 import { and, asc, desc, eq, gt, sql } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
@@ -114,22 +115,43 @@ export function templateRoutes(deps: Deps) {
       const templateId = c.req.valid("param").id;
       await requireTemplate(deps, p.workspaceId, templateId);
       const input = c.req.valid("json");
+      // A design document is authoritative: render the HTML/text artifacts at
+      // authoring time so the rest of the pipeline (lint, preview, send)
+      // consumes them unchanged (ADR-0002).
+      let bodyHtml = input.bodyHtml;
+      let bodyText = input.bodyText;
+      let editorSchemaVersion = "m1-simple";
+      if (input.designJson !== undefined) {
+        const design = designDocumentSchema.safeParse(input.designJson);
+        if (!design.success) {
+          throw new HTTPException(400, {
+            message: `Invalid design document: ${design.error.issues
+              .map((issue) => `${issue.path.join(".")}: ${issue.message}`)
+              .join("; ")}`,
+          });
+        }
+        const rendered = await renderDesign(design.data);
+        bodyHtml = rendered.html;
+        bodyText = rendered.text;
+        editorSchemaVersion = DESIGN_SCHEMA_VERSION;
+      }
       const next = await deps.db
         .select({ max: sql<number>`coalesce(max(${templateVersions.version}), 0) + 1` })
         .from(templateVersions)
         .where(eq(templateVersions.templateId, templateId));
       const version = next[0]?.max ?? 1;
       const sourceHash = createHash("sha256")
-        .update(JSON.stringify([input.subject, input.bodyHtml, input.bodyText, input.designJson]))
+        .update(JSON.stringify([input.subject, bodyHtml, bodyText, input.designJson]))
         .digest("hex");
       const inserted = await deps.db
         .insert(templateVersions)
         .values({
           templateId,
           version,
+          editorSchemaVersion,
           subject: input.subject,
-          bodyHtml: input.bodyHtml,
-          bodyText: input.bodyText,
+          bodyHtml,
+          bodyText,
           designJson: input.designJson ?? null,
           sourceHash,
         })

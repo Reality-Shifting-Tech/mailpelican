@@ -36,3 +36,15 @@ export function buildListUnsubscribeHeaders(
     "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
   };
 }
+
+/**
+ * Attach the footer to a message body. Full documents (React Email output)
+ * get it inside `</body>`; fragments get it appended.
+ */
+export function appendFooter(body: string, footer: string): string {
+  const closing = body.toLowerCase().lastIndexOf("</body>");
+  if (closing === -1) {
+    return body + footer;
+  }
+  return body.slice(0, closing) + footer + body.slice(closing);
+}

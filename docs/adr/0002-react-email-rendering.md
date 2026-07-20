@@ -18,8 +18,12 @@ components, compiled to client-safe HTML at render time. MJML is rejected: its
 abstraction duplicates what React components already give us (composition,
 props, type-checking) while adding a build step we do not control.
 
-This ADR records intent only; the rendering pipeline itself is scheduled for a
-later milestone.
+Implemented in `@dispatch/render`: editors author a typed `design-v1` JSON
+document (heading/text/button/image/divider blocks); `POST
+/v1/templates/:id/versions` validates it and compiles HTML + plain-text
+artifacts onto the immutable version, so lint, preview, and the send pipeline
+consume rendered output unchanged. Merge tags pass through the renderer
+untouched and are substituted per recipient at send time.
 
 ## Consequences
 

@@ -25,6 +25,7 @@ import {
 import type { Database } from "@dispatch/db";
 import {
   backoffDelayMs,
+  appendFooter,
   buildComplianceFooter,
   buildListUnsubscribeHeaders,
   canRetry,
@@ -245,7 +246,10 @@ export async function dispatchMessage(deps: PipelineDeps, messageId: string): Pr
     sender_address: `${bundle.workspace.organizationName}, ${bundle.workspace.postalAddress}`,
   };
   const footer = buildComplianceFooter(bundle.workspace, unsubscribeUrl);
-  const html = renderMergeTags(bundle.version.bodyHtml, fields, { escape: true }) + footer.html;
+  const html = appendFooter(
+    renderMergeTags(bundle.version.bodyHtml, fields, { escape: true }),
+    footer.html,
+  );
   const text = renderMergeTags(bundle.version.bodyText, fields, { escape: false }) + footer.text;
   const subject = renderMergeTags(bundle.version.subject, fields, { escape: false });
 

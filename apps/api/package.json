@@ -17,6 +17,7 @@
     "@dispatch/db": "workspace:*",
     "@dispatch/domain": "workspace:*",
     "@dispatch/relays": "workspace:*",
+    "@dispatch/render": "workspace:*",
     "@hono/node-server": "^1.14.0",
     "@hono/zod-openapi": "^0.19.0",
     "drizzle-orm": "^0.43.1",
