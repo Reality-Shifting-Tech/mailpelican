@@ -47,6 +47,12 @@ importers:
       '@dispatch/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@dispatch/domain':
+        specifier: workspace:*
+        version: link:../../packages/domain
+      '@dispatch/relays':
+        specifier: workspace:*
+        version: link:../../packages/relays
       '@hono/node-server':
         specifier: ^1.14.0
         version: 1.19.14(hono@4.12.31)
@@ -66,6 +72,9 @@ importers:
         specifier: ^3.24.3
         version: 3.25.76
     devDependencies:
+      '@dispatch/testkit':
+        specifier: workspace:*
+        version: link:../../packages/testkit
       '@types/node':
         specifier: ^22.15.0
         version: 22.20.1

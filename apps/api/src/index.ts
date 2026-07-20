@@ -1,7 +1,9 @@
 import { serve } from "@hono/node-server";
 import { loadEnv } from "@dispatch/config";
-import { closeDb, createDb } from "@dispatch/db";
-import { sql } from "drizzle-orm";
+import { closeDb, createDb, relays } from "@dispatch/db";
+import { decryptSecret } from "@dispatch/domain";
+import { createRelayProvider } from "@dispatch/relays";
+import { eq, sql } from "drizzle-orm";
 import { Redis } from "ioredis";
 import { createApp } from "./app.js";
 import type { Deps } from "./deps.js";
@@ -13,6 +15,7 @@ const redis = new Redis(env.REDIS_URL, { lazyConnect: true, maxRetriesPerRequest
 
 const deps: Deps = {
   env,
+  db,
   checkDatabase: async () => {
     await db.execute(sql`SELECT 1`);
   },
@@ -22,6 +25,15 @@ const deps: Deps = {
   close: async () => {
     await closeDb(db);
     redis.disconnect();
+  },
+  createProvider: async (relayId) => {
+    const rows = await db.select().from(relays).where(eq(relays.id, relayId)).limit(1);
+    const relay = rows[0];
+    if (relay === undefined) {
+      throw new Error(`Relay ${relayId} not found`);
+    }
+    const credentials = decryptSecret(relay.credentialsEncrypted, env.CREDENTIAL_ENCRYPTION_KEY);
+    return createRelayProvider(relay.type, credentials, relay.config);
   },
 };
 

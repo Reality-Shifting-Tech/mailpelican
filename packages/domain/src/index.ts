@@ -8,3 +8,4 @@ export * from "./rate-limit.js";
 export * from "./consent.js";
 export * from "./lint.js";
 export * from "./thresholds.js";
+export * from "./compliance.js";
