@@ -229,4 +229,123 @@ describe("send limits", () => {
       await limited.close();
     }
   });
+
+  it("enforces the send limit on the schedule path too", async () => {
+    const limited = await createTestContext({ scopes: ["read", "write", "send"], sendLimit: 1 });
+    try {
+      const { headers, campaignId } = await campaignWithAudience(limited, ["a@x.co", "b@x.co"]);
+      const { confirmationToken } = await prepareFor(limited, headers, campaignId);
+      const schedule = await limited.app.request(`/v1/campaigns/${campaignId}/schedule`, {
+        method: "POST",
+        headers: { ...headers, "idempotency-key": "s1" },
+        body: JSON.stringify({ confirmationToken, scheduledAt: "2030-01-01T00:00:00.000Z" }),
+      });
+      expect(schedule.status).toBe(403);
+    } finally {
+      await limited.close();
+    }
+  });
+});
+
+async function campaignWithAudience(target: TestContext, emails: string[]) {
+  const seeded = await seedRelayAndIdentity(target);
+  const headers = {
+    authorization: `Bearer ${target.rawKey}`,
+    "content-type": "application/json",
+  };
+  const list = await target.app.request("/v1/lists", {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ name: `l-${uuidv7().slice(0, 8)}` }),
+  });
+  const lId = ((await list.json()) as { id: string }).id;
+  const imp = await target.app.request("/v1/contacts/import", {
+    method: "POST",
+    headers: { ...headers, "idempotency-key": uuidv7() },
+    body: JSON.stringify({ listId: lId, contacts: emails.map((email) => ({ email })) }),
+  });
+  expect(imp.status).toBe(200);
+  const camp = await target.app.request("/v1/campaigns", {
+    method: "POST",
+    headers,
+    body: JSON.stringify({
+      name: "c",
+      subject: "s",
+      fromEmail: `news-${seeded.identityId.slice(-12)}@example.com`,
+      fromName: "N",
+      bodyHtml: "<p>x</p>",
+      bodyText: "x",
+      audienceRef: lId,
+      relayId: seeded.relayId,
+      senderIdentityId: seeded.identityId,
+    }),
+  });
+  expect(camp.status).toBe(201);
+  return { headers, campaignId: ((await camp.json()) as { id: string }).id };
+}
+
+async function prepareFor(
+  target: TestContext,
+  headers: Record<string, string>,
+  campaignId: string,
+) {
+  const prep = await target.app.request(`/v1/campaigns/${campaignId}/prepare`, {
+    method: "POST",
+    headers,
+  });
+  expect(prep.status).toBe(200);
+  return (await prep.json()) as { confirmationToken: string; approvalRequired: boolean };
+}
+
+describe("approval threshold", () => {
+  it("requires an explicit approved flag above the threshold", async () => {
+    const gated = await createTestContext({
+      scopes: ["read", "write", "send"],
+      approvalThreshold: 1,
+    });
+    try {
+      const { headers, campaignId } = await campaignWithAudience(gated, ["a@x.co", "b@x.co"]);
+      const first = await prepareFor(gated, headers, campaignId);
+      expect(first.approvalRequired).toBe(true);
+
+      const denied = await gated.app.request(`/v1/campaigns/${campaignId}/confirm-send`, {
+        method: "POST",
+        headers: { ...headers, "idempotency-key": "c1" },
+        body: JSON.stringify({ confirmationToken: first.confirmationToken }),
+      });
+      expect(denied.status).toBe(403);
+      expect(((await denied.json()) as { detail: string }).detail).toContain("approval threshold");
+
+      // A rejection burns the token, so approve with a fresh prepare.
+      const second = await prepareFor(gated, headers, campaignId);
+      const approved = await gated.app.request(`/v1/campaigns/${campaignId}/confirm-send`, {
+        method: "POST",
+        headers: { ...headers, "idempotency-key": "c2" },
+        body: JSON.stringify({ confirmationToken: second.confirmationToken, approved: true }),
+      });
+      expect(approved.status).toBe(200);
+    } finally {
+      await gated.close();
+    }
+  });
+
+  it("sends without approval at or under the threshold", async () => {
+    const gated = await createTestContext({
+      scopes: ["read", "write", "send"],
+      approvalThreshold: 5,
+    });
+    try {
+      const { headers, campaignId } = await campaignWithAudience(gated, ["a@x.co", "b@x.co"]);
+      const prepared = await prepareFor(gated, headers, campaignId);
+      expect(prepared.approvalRequired).toBe(false);
+      const confirm = await gated.app.request(`/v1/campaigns/${campaignId}/confirm-send`, {
+        method: "POST",
+        headers: { ...headers, "idempotency-key": "c1" },
+        body: JSON.stringify({ confirmationToken: prepared.confirmationToken }),
+      });
+      expect(confirm.status).toBe(200);
+    } finally {
+      await gated.close();
+    }
+  });
 });

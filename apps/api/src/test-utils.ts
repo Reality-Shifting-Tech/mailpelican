@@ -35,6 +35,7 @@ export function testEnv(): Env {
 export interface SeedOptions {
   scopes?: ("read" | "write" | "send")[];
   sendLimit?: number;
+  approvalThreshold?: number;
 }
 
 /** Create an isolated app: PGlite database, one workspace, one API key. */
@@ -56,6 +57,7 @@ export async function createTestContext(options: SeedOptions = {}): Promise<Test
     secretHash: issued.secretHash,
     scopes: options.scopes ?? ["read", "write", "send"],
     sendLimit: options.sendLimit ?? null,
+    approvalThreshold: options.approvalThreshold ?? null,
   });
   const providers = new Map<string, RelayProvider & { sent?: unknown[] }>();
   const fakeRelay = new FakeRelay({ providerIdempotency: true });

@@ -33,13 +33,15 @@ bootstrap` command creates the first workspace + owner key. Argon2id
    and re-runs of message creation are conflict-free by construction.
 
 4. **Render artifacts and live DNS verification deferred.**
-   `template_render_artifacts` (§4) requires the M2 renderer; M1 templates
-   version subject/body_html/body_text with `design_json` reserved, and
-   campaign versions carry the complete message definition inline. Sender
+   `template_render_artifacts` (§4) as a separate table remains deferred; the
+   `@dispatch/render` pipeline (ADR-0002) compiles `design_json` to HTML/text
+   inline on the immutable template version at authoring time, and campaign
+   versions carry the complete message definition inline. Sender
    identity verification is an explicit operator action (`POST
 /sender-identities/:id/verify`) returning placeholder DNS records; live
    SPF/DKIM/DMARC checks land with the onboarding UI. `approval_threshold` on
-   API keys is stored but not yet enforced (only `send_limit` is).
+   API keys is enforced at confirm-send and schedule: above it the caller
+   must re-confirm with `approved: true` (`send_limit` remains a hard cap).
 
 ## Consequences
 

@@ -72,7 +72,11 @@ const campaignPatch = campaignInput.partial().extend({
   status: z.enum(["ready"]).optional(),
 });
 
-const confirmInput = z.object({ confirmationToken: z.string().min(1) });
+const confirmInput = z.object({
+  confirmationToken: z.string().min(1),
+  /** Explicit approval required when the audience exceeds the key's threshold. */
+  approved: z.boolean().optional(),
+});
 
 const scheduleInput = confirmInput.extend({ scheduledAt: z.string().datetime() });
 
@@ -321,6 +325,10 @@ export function campaignRoutes(deps: Deps) {
           audienceHash: result.audienceHash,
           confirmationToken: result.confirmationToken,
           expiresAt: result.expiresAt,
+          approvalRequired: exceedsApprovalThreshold(
+            await loadKeySendPolicy(deps.db, p),
+            result.included,
+          ),
         },
         200,
       );
@@ -363,7 +371,7 @@ export function campaignRoutes(deps: Deps) {
       },
       responses: {
         ...jsonOk(dataSchema, "Campaign scheduled."),
-        ...problemResponses(400, 404, 409),
+        ...problemResponses(400, 403, 404, 409),
       },
     }),
     async (c) => {
@@ -372,6 +380,11 @@ export function campaignRoutes(deps: Deps) {
       const { body } = await withIdempotencyKey(deps.db, p, "campaigns.schedule", c, async () => {
         const campaign = await loadCampaign(deps.db, p.workspaceId, c.req.valid("param").id);
         const confirmation = await consumeConfirmation(deps.db, campaign, input.confirmationToken);
+        enforceSendPolicy(
+          await loadKeySendPolicy(deps.db, p),
+          confirmation.recipientCount,
+          input.approved === true,
+        );
         assertCampaignTransition(campaign.status, "scheduled");
         const moved = await casCampaignStatus(
           deps.db,
@@ -499,6 +512,53 @@ async function consumeConfirmation(
   return confirmation;
 }
 
+interface KeySendPolicy {
+  sendLimit: number | null;
+  approvalThreshold: number | null;
+}
+
+/** The calling key's send constraints; unconstrained for non-key actors. */
+async function loadKeySendPolicy(db: Database, p: Principal): Promise<KeySendPolicy> {
+  if (p.actorType !== "api_key") {
+    return { sendLimit: null, approvalThreshold: null };
+  }
+  const keyRows = await db.query.apiKeys.findMany({
+    where: (t, { eq: e }) => e(t.id, p.actorId),
+    limit: 1,
+  });
+  return {
+    sendLimit: keyRows[0]?.sendLimit ?? null,
+    approvalThreshold: keyRows[0]?.approvalThreshold ?? null,
+  };
+}
+
+function exceedsApprovalThreshold(policy: KeySendPolicy, recipientCount: number): boolean {
+  return policy.approvalThreshold !== null && recipientCount > policy.approvalThreshold;
+}
+
+/**
+ * Enforce the key's send policy at the point of no return. `sendLimit` is a
+ * hard cap (403); `approvalThreshold` demands an explicit `approved: true`
+ * re-confirmation (ADR-0004 item 4). Like the send limit, a rejection burns
+ * the single-use confirmation token — prepare must be re-run.
+ */
+function enforceSendPolicy(policy: KeySendPolicy, recipientCount: number, approved: boolean): void {
+  if (policy.sendLimit !== null && recipientCount > policy.sendLimit) {
+    throw new DomainError(
+      "send_limit_exceeded",
+      `Recipient count ${recipientCount} exceeds this key's send limit ${policy.sendLimit}.`,
+      403,
+    );
+  }
+  if (exceedsApprovalThreshold(policy, recipientCount) && !approved) {
+    throw new DomainError(
+      "approval_required",
+      `Recipient count ${recipientCount} exceeds this key's approval threshold ${policy.approvalThreshold}; confirm again with "approved": true.`,
+      403,
+    );
+  }
+}
+
 async function confirmSend(
   deps: Deps,
   p: Principal,
@@ -519,19 +579,11 @@ async function confirmSend(
     throw new DomainError("relay_not_ready", "Campaign relay is not ready.", 422);
   }
   const confirmation = await consumeConfirmation(deps.db, campaign, input.confirmationToken);
-
-  const keyRows = await deps.db.query.apiKeys.findMany({
-    where: (t, { eq: e }) => e(t.id, p.actorId),
-    limit: 1,
-  });
-  const sendLimit = keyRows[0]?.sendLimit ?? null;
-  if (sendLimit !== null && confirmation.recipientCount > sendLimit) {
-    throw new DomainError(
-      "send_limit_exceeded",
-      `Recipient count ${confirmation.recipientCount} exceeds this key's send limit ${sendLimit}.`,
-      403,
-    );
-  }
+  enforceSendPolicy(
+    await loadKeySendPolicy(deps.db, p),
+    confirmation.recipientCount,
+    input.approved === true,
+  );
 
   // Atomic per architecture §6 step 5: transition + outbox row in one commit.
   const moved = await deps.db.transaction(async (tx) => {
