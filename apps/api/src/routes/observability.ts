@@ -10,7 +10,7 @@ import {
   OUTBOX_TOPICS,
 } from "@dispatch/db";
 import { DomainError } from "@dispatch/domain";
-import { and, asc, eq, gt, sql } from "drizzle-orm";
+import { and, asc, eq, gt, inArray, sql } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import type { Deps, Principal } from "../deps.js";
 import { parsePagination, toCursorPage } from "../http.js";
@@ -106,6 +106,22 @@ export function observabilityRoutes(deps: Deps) {
         .innerJoin(messages, eq(events.messageId, messages.id))
         .where(and(eq(events.workspaceId, workspaceId), eq(messages.campaignId, campaignId)))
         .groupBy(events.type);
+      const engagement = await deps.db
+        .select({
+          type: events.type,
+          uniques: sql<number>`count(distinct ${events.messageId})::int`,
+        })
+        .from(events)
+        .innerJoin(messages, eq(events.messageId, messages.id))
+        .where(
+          and(
+            eq(events.workspaceId, workspaceId),
+            eq(messages.campaignId, campaignId),
+            inArray(events.type, ["opened", "clicked"]),
+          ),
+        )
+        .groupBy(events.type);
+      const uniqueByType = Object.fromEntries(engagement.map((r) => [r.type, r.uniques]));
       const byStatus = Object.fromEntries(messageCounts.map((r) => [r.status, r.count]));
       const byType = Object.fromEntries(eventCounts.map((r) => [r.type, r.count]));
       return c.json(
@@ -124,6 +140,8 @@ export function observabilityRoutes(deps: Deps) {
             bounced: byStatus.bounced ?? 0,
             complained: byStatus.complained ?? 0,
             failed: byStatus.failed ?? 0,
+            uniqueOpens: uniqueByType.opened ?? 0,
+            uniqueClicks: uniqueByType.clicked ?? 0,
           },
         },
         200,

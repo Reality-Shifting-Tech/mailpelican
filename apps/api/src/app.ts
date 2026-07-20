@@ -16,6 +16,7 @@ import { publicRoutes } from "./routes/public.js";
 import { relayRoutes, senderIdentityRoutes } from "./routes/relays.js";
 import { suppressionRoutes } from "./routes/suppressions.js";
 import { templateRoutes } from "./routes/templates.js";
+import { trackingRoutes } from "./routes/tracking.js";
 import { webhookRoutes } from "./routes/webhooks.js";
 
 const SEND_ACTIONS = /\/campaigns\/[^/]+\/(confirm-send|schedule|pause|resume|cancel)$/;
@@ -63,6 +64,7 @@ export function createApp(deps: Deps) {
   const v1 = new OpenAPIHono();
   v1.route("/public", publicRoutes(deps));
   v1.route("/webhooks", webhookRoutes(deps));
+  v1.route("/track", trackingRoutes(deps));
 
   const secured = new OpenAPIHono();
   secured.use("*", createAuthMiddleware(deps.db));

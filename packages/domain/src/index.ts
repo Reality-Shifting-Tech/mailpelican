@@ -9,3 +9,4 @@ export * from "./consent.js";
 export * from "./lint.js";
 export * from "./thresholds.js";
 export * from "./compliance.js";
+export * from "./tracking.js";

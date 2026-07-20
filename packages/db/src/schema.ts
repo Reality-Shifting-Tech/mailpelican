@@ -421,6 +421,8 @@ export const eventTypes = [
   "bounced",
   "complained",
   "rejected",
+  "opened",
+  "clicked",
   "unknown",
 ] as const;
 export const eventTypeEnum = pgEnum("event_type", eventTypes);

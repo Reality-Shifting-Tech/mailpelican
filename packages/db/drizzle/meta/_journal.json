@@ -8,6 +8,13 @@
       "when": 1784512545541,
       "tag": "0000_oval_earthquake",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1784549303588,
+      "tag": "0001_worried_bloodstrike",
+      "breakpoints": true
     }
   ]
 }

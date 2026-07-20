@@ -4,6 +4,7 @@ import {
   campaignRateSample,
   casCampaignStatus,
   claimMessage,
+  contacts,
   ensureUnsubscribeToken,
   findDueScheduledCampaigns,
   findMessageByProviderId,
@@ -33,7 +34,9 @@ import {
   decideSendability,
   DomainError,
   evaluateRates,
+  injectTrackingPixel,
   renderMergeTags,
+  rewriteLinks,
 } from "@dispatch/domain";
 import type { Env } from "@dispatch/config";
 import type { RateLimiter } from "@dispatch/queue";
@@ -246,12 +249,33 @@ export async function dispatchMessage(deps: PipelineDeps, messageId: string): Pr
     sender_address: `${bundle.workspace.organizationName}, ${bundle.workspace.postalAddress}`,
   };
   const footer = buildComplianceFooter(bundle.workspace, unsubscribeUrl);
-  const html = appendFooter(
+  let html = appendFooter(
     renderMergeTags(bundle.version.bodyHtml, fields, { escape: true }),
     footer.html,
   );
   const text = renderMergeTags(bundle.version.bodyText, fields, { escape: false }) + footer.text;
   const subject = renderMergeTags(bundle.version.subject, fields, { escape: false });
+
+  // Open/click tracking honors both the version's options and the contact's
+  // stored opt-out; unsubscribe links are never rewritten.
+  const contactRows = await deps.db
+    .select({ trackingDisabled: contacts.trackingDisabled })
+    .from(contacts)
+    .where(eq(contacts.id, recipient.contactId))
+    .limit(1);
+  if (contactRows[0]?.trackingDisabled !== true) {
+    const trackingBase = deps.env.TRACKING_URL.replace(/\/$/, "");
+    if (bundle.version.trackingOptions.clicks) {
+      html = rewriteLinks(html, (url) =>
+        url === unsubscribeUrl || url === oneClickUrl
+          ? null
+          : `${trackingBase}/v1/track/click/${messageId}?url=${encodeURIComponent(url)}`,
+      );
+    }
+    if (bundle.version.trackingOptions.opens) {
+      html = injectTrackingPixel(html, `${trackingBase}/v1/track/open/${messageId}`);
+    }
+  }
 
   if (bundle.relay.rateLimit !== null) {
     const permit = await deps.limiter.take(`relay:${bundle.relay.id}`, {
