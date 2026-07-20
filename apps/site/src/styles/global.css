@@ -1,0 +1,185 @@
+:root {
+  color-scheme: light;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  color: #1a1a1a;
+  background: #f7f6f4;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+.wrap {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 0;
+  border-bottom: 2px solid #1a1a1a;
+}
+
+nav .brand {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-decoration: none;
+  color: #1a1a1a;
+}
+
+nav .links {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+nav .links a {
+  color: #6b6b6b;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+nav .links a:hover {
+  color: #1a1a1a;
+}
+
+.btn {
+  display: inline-block;
+  padding: 10px 18px;
+  border-radius: 6px;
+  font-size: 14px;
+  text-decoration: none;
+  border: 1px solid #1a1a1a;
+}
+
+.btn.primary {
+  background: #1a1a1a;
+  color: #fff;
+}
+
+.btn.ghost {
+  color: #1a1a1a;
+}
+
+.hero {
+  padding: 88px 0 64px;
+}
+
+.hero .kicker {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #6b6b6b;
+}
+
+.hero h1 {
+  font-size: 52px;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  margin: 12px 0 16px;
+  max-width: 16ch;
+}
+
+.hero p.lede {
+  font-size: 18px;
+  color: #4a4a4a;
+  max-width: 52ch;
+  margin: 0 0 28px;
+}
+
+.hero .cta {
+  display: flex;
+  gap: 12px;
+}
+
+.terminal {
+  background: #1a1a1a;
+  color: #e8e6e3;
+  border-radius: 10px;
+  padding: 18px 20px;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 13px;
+  line-height: 1.7;
+  overflow-x: auto;
+  margin-top: 40px;
+}
+
+.terminal .dim {
+  color: #8a8885;
+}
+
+section {
+  padding: 56px 0;
+  border-top: 1px solid #e2e0dc;
+}
+
+section h2 {
+  font-size: 28px;
+  letter-spacing: -0.02em;
+  margin: 0 0 8px;
+}
+
+section .sub {
+  color: #6b6b6b;
+  margin: 0 0 28px;
+  max-width: 56ch;
+}
+
+.features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.feature {
+  background: #fff;
+  border: 1px solid #e2e0dc;
+  border-radius: 10px;
+  padding: 20px;
+}
+
+.feature h3 {
+  margin: 0 0 6px;
+  font-size: 16px;
+}
+
+.feature p {
+  margin: 0;
+  font-size: 14px;
+  color: #4a4a4a;
+}
+
+code {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 0.92em;
+  background: #efedea;
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.terminal code,
+.mcp code {
+  background: none;
+  padding: 0;
+}
+
+footer {
+  border-top: 2px solid #1a1a1a;
+  padding: 24px 0 48px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: #6b6b6b;
+}
+
+footer a {
+  color: #1a1a1a;
+}

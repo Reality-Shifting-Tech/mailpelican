@@ -1,0 +1,158 @@
+---
+import "../styles/global.css";
+
+const GITHUB = "https://github.com/Reality-Shifting-Tech/dispatch";
+
+const features = [
+  {
+    title: "Safe-send pipeline",
+    body: "Every campaign goes lint → preview → audience snapshot → single-use confirmation token → send. Nothing ships by accident, and API keys carry send limits and approval thresholds.",
+  },
+  {
+    title: "Consent & compliance built in",
+    body: "Double opt-in with single-use confirmation tokens, workspace-global suppression, per-dispatch consent rechecks, CAN-SPAM footers, and RFC 8058 one-click unsubscribe.",
+  },
+  {
+    title: "Relay-agnostic sending",
+    body: "Send through AWS SES v2, Resend, or any SMTP server behind one RelayProvider contract. Webhook feedback is verified, normalized, and auto-pauses on bounce/complaint spikes.",
+  },
+  {
+    title: "Open & click tracking",
+    body: "Pixel and redirect tracking with per-contact opt-out, unique open/click stats per campaign, and no leakage of message existence to scanners.",
+  },
+  {
+    title: "Agent-native (MCP)",
+    body: "A first-class MCP server exposes the whole API to AI agents — reads, draft authoring, previews. Sending stays behind the human-confirmed flow.",
+  },
+  {
+    title: "Self-hosted, AGPL-3.0",
+    body: "One Docker image: API, worker, and console. PostgreSQL + Redis, your domains, your data, your rules. No per-subscriber pricing, ever.",
+  },
+];
+
+const quickstart = `$ docker compose up -d postgres redis
+$ pnpm --filter @dispatch/db migrate
+$ pnpm --filter @dispatch/api bootstrap "Workspace" "Org" "1 Main St"
+owner api key (store it now): dk_…
+$ pnpm dev   # api :3000 · web :5173 · worker`;
+
+const mcpConfig = `{
+  "mcpServers": {
+    "dispatch": {
+      "command": "node",
+      "args": ["apps/mcp/dist/index.js"],
+      "env": {
+        "DISPATCH_API_URL": "http://localhost:3000",
+        "DISPATCH_API_KEY": "dk_..."
+      }
+    }
+  }
+}`;
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>dispatch — open-source, agent-native email marketing</title>
+    <meta
+      name="description"
+      content="dispatch is the AGPL-3.0, self-hostable, agent-native email marketing platform. Safe sends, consent built in, SES/Resend/SMTP, MCP for AI agents."
+    />
+  </head>
+  <body>
+    <div class="wrap">
+      <nav>
+        <a class="brand" href="/">dispatch</a>
+        <div class="links">
+          <a href="#features">Features</a>
+          <a href="#agents">Agents</a>
+          <a href="#self-host">Self-host</a>
+          <a class="btn primary" href={GITHUB}>GitHub</a>
+        </div>
+      </nav>
+
+      <header class="hero">
+        <p class="kicker">Open source · AGPL-3.0 · Self-hostable</p>
+        <h1>Email marketing your agents can operate.</h1>
+        <p class="lede">
+          dispatch is the open-source Mailchimp alternative built for self-hosters and for AI agents
+          as first-class operators. Safe sends, consent and compliance by default, and a full API
+          everything — UI included — is built on.
+        </p>
+        <div class="cta">
+          <a class="btn primary" href={GITHUB}>Star on GitHub</a>
+          <a class="btn ghost" href="#self-host">Self-host in 5 minutes</a>
+        </div>
+        <div class="terminal">
+          <span class="dim"># first safe send, from zero</span><br />
+          {
+            quickstart.split("\n").map((line) => (
+              <>
+                {line}
+                <br />
+              </>
+            ))
+          }
+        </div>
+      </header>
+
+      <section id="features">
+        <h2>Built for deliverability and safety</h2>
+        <p class="sub">
+          The unglamorous parts of email — consent, suppression, idempotency, bounce handling — are
+          the parts dispatch refuses to compromise on.
+        </p>
+        <div class="features">
+          {
+            features.map((f) => (
+              <div class="feature">
+                <h3>{f.title}</h3>
+                <p>{f.body}</p>
+              </div>
+            ))
+          }
+        </div>
+      </section>
+
+      <section id="agents">
+        <h2>Agent-native by design</h2>
+        <p class="sub">
+          Every operation the console exposes is reachable by automation through the
+          <code>/v1</code> API — and through the bundled MCP server, your agents can list audiences, author
+          drafts, and review previews while sends stay human-confirmed.
+        </p>
+        <div class="terminal mcp">
+          <span class="dim"># ~/.config/your-agent/mcp.json</span><br />
+          {
+            mcpConfig.split("\n").map((line) => (
+              <>
+                {line}
+                <br />
+              </>
+            ))
+          }
+        </div>
+      </section>
+
+      <section id="self-host">
+        <h2>Your infrastructure, your rules</h2>
+        <p class="sub">
+          One all-in-one container carries the API, the send worker, and the control console. Bring
+          PostgreSQL 16 and Redis; keep your domains, your suppression lists, and your subscriber
+          data on hardware you own.
+        </p>
+        <div class="cta">
+          <a class="btn primary" href={`${GITHUB}#quickstart`}>Read the quickstart</a>
+        </div>
+      </section>
+
+      <footer>
+        <span
+          >AGPL-3.0 · A <a href="https://realityshiftingtech.com">Reality Shifting Tech</a> project</span
+        >
+        <a href={GITHUB}>GitHub</a>
+      </footer>
+    </div>
+  </body>
+</html>
