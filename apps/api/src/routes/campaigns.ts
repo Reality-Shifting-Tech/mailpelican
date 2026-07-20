@@ -39,6 +39,7 @@ import {
   recipientCounts,
   touchCampaign,
 } from "../services/send-flow.js";
+import { checkSpamScore } from "../services/spam-score.js";
 import {
   createRouter,
   dataPageSchema,
@@ -282,8 +283,24 @@ export function campaignRoutes(deps: Deps) {
       const version = await loadCurrentVersion(deps.db, campaign);
       const issues = await lintCampaignVersion(deps.db, p.workspaceId, version);
       const samples = await sampleRenders(deps, p.workspaceId, version);
+      const first = samples[0];
+      const spam =
+        first === undefined
+          ? null
+          : await checkSpamScore(deps.env, {
+              fromEmail: version.fromEmail,
+              toEmail: first.email,
+              subject: first.subject,
+              html: first.html,
+              text: first.text,
+            });
       return c.json(
-        { lint: issues, samples, recipientCounts: await recipientCounts(deps.db, campaign.id) },
+        {
+          lint: issues,
+          samples,
+          recipientCounts: await recipientCounts(deps.db, campaign.id),
+          spam,
+        },
         200,
       );
     },

@@ -25,6 +25,14 @@ services:
       timeout: 3s
       retries: 10
 
+  # Open-source spam filter for pre-send content scoring (RSPAMD_URL).
+  rspamd:
+    image: rspamd/rspamd:latest
+    ports:
+      - "11334:11334"
+    volumes:
+      - rspamd-data:/var/lib/rspamd
+
   # All-in-one image: API, worker, and the built web bundle.
   # Requires `pnpm install && pnpm build` to have produced dist/ output,
   # or build the image itself with `docker compose build app`.
@@ -47,9 +55,11 @@ services:
       REDIS_URL: redis://redis:6379
       CREDENTIAL_ENCRYPTION_KEY: dev-only-key-change-me-000000
       SESSION_SECRET: dev-only-secret-change-me-00000
+      RSPAMD_URL: http://rspamd:11334
     ports:
       - "3000:3000"
       - "8080:8080"
 
 volumes:
   postgres-data:
+  rspamd-data:

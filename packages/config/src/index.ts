@@ -15,6 +15,8 @@ const envSchema = z.object({
   CREDENTIAL_ENCRYPTION_KEY: secretSchema(32),
   SESSION_SECRET: secretSchema(32),
   PORT: z.coerce.number().int().min(1).max(65535).default(3000),
+  /** Optional rspamd HTTP endpoint for pre-send spam scoring (off when unset). */
+  RSPAMD_URL: urlSchema.optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;
