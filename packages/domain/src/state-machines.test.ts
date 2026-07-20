@@ -53,9 +53,7 @@ describe("recipient state machine", () => {
   it("treats post-delivery feedback as the only legal exit from delivered", () => {
     assertRecipientTransition("delivered", "bounced");
     assertRecipientTransition("delivered", "complained");
-    expect(() => assertRecipientTransition("delivered", "sending")).toThrow(
-      InvalidTransitionError,
-    );
+    expect(() => assertRecipientTransition("delivered", "sending")).toThrow(InvalidTransitionError);
   });
 
   it("marks exclusion states terminal", () => {

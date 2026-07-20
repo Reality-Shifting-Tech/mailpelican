@@ -1,10 +1,5 @@
 import { createRoute, z } from "@hono/zod-openapi";
-import {
-  appendOutbox,
-  insertInboundWebhookDedup,
-  OUTBOX_TOPICS,
-  relays,
-} from "@dispatch/db";
+import { appendOutbox, insertInboundWebhookDedup, OUTBOX_TOPICS, relays } from "@dispatch/db";
 import { createHash } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
@@ -47,7 +42,9 @@ export function webhookRoutes(deps: Deps) {
       const provider = await deps.createProvider(relayId);
       const verified = await provider.verifyWebhook({ headers, body });
       if (!verified.valid) {
-        throw new HTTPException(401, { message: `Webhook verification failed: ${verified.reason}` });
+        throw new HTTPException(401, {
+          message: `Webhook verification failed: ${verified.reason}`,
+        });
       }
       const payloadHash = createHash("sha256").update(body, "utf8").digest("hex");
       const stored = await insertInboundWebhookDedup(deps.db, {
@@ -64,7 +61,10 @@ export function webhookRoutes(deps: Deps) {
           payload: { workspaceId: relay.workspaceId, inboxId: stored.id, relayId },
         });
       }
-      return c.json({ stored: stored.outcome === "inserted", duplicate: stored.outcome === "duplicate" }, 200);
+      return c.json(
+        { stored: stored.outcome === "inserted", duplicate: stored.outcome === "duplicate" },
+        200,
+      );
     },
   );
 

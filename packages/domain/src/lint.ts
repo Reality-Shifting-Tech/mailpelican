@@ -57,11 +57,7 @@ export function lintCampaign(input: CampaignLintInput): LintIssue[] {
   ] as const) {
     const unknown = findUnknownMergeTags(template, input.knownMergeFields);
     if (unknown.length > 0) {
-      push(
-        "unknown_merge_tags",
-        "error",
-        `Unknown merge tags in ${field}: ${unknown.join(", ")}.`,
-      );
+      push("unknown_merge_tags", "error", `Unknown merge tags in ${field}: ${unknown.join(", ")}.`);
     }
   }
 

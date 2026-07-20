@@ -1,9 +1,5 @@
 import { createRoute, z } from "@hono/zod-openapi";
-import {
-  consentEvents,
-  contacts,
-  listMemberships,
-} from "@dispatch/db";
+import { consentEvents, contacts, listMemberships } from "@dispatch/db";
 import { isValidEmail, normalizeEmail } from "@dispatch/domain";
 import { and, asc, eq, gt } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
@@ -33,7 +29,10 @@ const importInput = z.object({
   source: z.string().min(1).max(120).default("api"),
   // Rows are validated individually so one bad address never rejects a batch;
   // invalid rows land in the rejection report instead (architecture §10).
-  contacts: z.array(contactInput.extend({ email: z.string().max(320) })).min(1).max(10_000),
+  contacts: z
+    .array(contactInput.extend({ email: z.string().max(320) }))
+    .min(1)
+    .max(10_000),
 });
 
 /** Contact CRUD and bulk import (with consent capture). */

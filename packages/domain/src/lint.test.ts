@@ -20,8 +20,9 @@ describe("campaign lint", () => {
 
   it("requires compliance identity before marketing sends", () => {
     const issues = lintCampaign({ ...base, postalAddress: "" });
-    expect(issues.some((i) => i.code === "missing_sender_identity" && i.severity === "error"))
-      .toBe(true);
+    expect(issues.some((i) => i.code === "missing_sender_identity" && i.severity === "error")).toBe(
+      true,
+    );
     expect(hasLintErrors(issues)).toBe(true);
   });
 

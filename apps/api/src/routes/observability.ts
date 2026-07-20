@@ -115,7 +115,11 @@ export function observabilityRoutes(deps: Deps) {
           recipients: Object.fromEntries(recipientCounts.map((r) => [r.status, r.count])),
           events: byType,
           totals: {
-            sent: (byStatus.accepted ?? 0) + (byStatus.delivered ?? 0) + (byStatus.bounced ?? 0) + (byStatus.complained ?? 0),
+            sent:
+              (byStatus.accepted ?? 0) +
+              (byStatus.delivered ?? 0) +
+              (byStatus.bounced ?? 0) +
+              (byStatus.complained ?? 0),
             delivered: byStatus.delivered ?? 0,
             bounced: byStatus.bounced ?? 0,
             complained: byStatus.complained ?? 0,
@@ -186,7 +190,10 @@ export function observabilityRoutes(deps: Deps) {
           status: z.enum(["received", "processed", "failed", "dead"]).optional(),
         }),
       },
-      responses: { ...jsonOk(dataPageSchema, "Page of webhook deliveries."), ...problemResponses(400) },
+      responses: {
+        ...jsonOk(dataPageSchema, "Page of webhook deliveries."),
+        ...problemResponses(400),
+      },
     }),
     async (c) => {
       const { workspaceId } = c.get("principal") as Principal;

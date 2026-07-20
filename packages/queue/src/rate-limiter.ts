@@ -11,10 +11,7 @@ export interface RateLimitResult {
  * atomic across worker processes; the Redis implementation uses a Lua script.
  */
 export interface RateLimiter {
-  take(
-    key: string,
-    config: { ratePerSecond: number; burst: number },
-  ): Promise<RateLimitResult>;
+  take(key: string, config: { ratePerSecond: number; burst: number }): Promise<RateLimitResult>;
 }
 
 const TAKE_TOKEN_LUA = `

@@ -1,10 +1,5 @@
 import { createRoute, z } from "@hono/zod-openapi";
-import {
-  consentEvents,
-  contacts,
-  listMemberships,
-  lists,
-} from "@dispatch/db";
+import { consentEvents, contacts, listMemberships, lists } from "@dispatch/db";
 import { and, eq } from "drizzle-orm";
 import type { Deps } from "../deps.js";
 import { resolveUnsubscribeToken } from "../services/send-flow.js";
@@ -21,7 +16,11 @@ async function describeToken(deps: Deps, rawToken: string) {
     .limit(1);
   const listRows =
     token.listId !== null
-      ? await deps.db.select({ name: lists.name }).from(lists).where(eq(lists.id, token.listId)).limit(1)
+      ? await deps.db
+          .select({ name: lists.name })
+          .from(lists)
+          .where(eq(lists.id, token.listId))
+          .limit(1)
       : [];
   const membershipRows =
     token.listId !== null
@@ -94,10 +93,7 @@ export function publicRoutes(deps: Deps) {
     }),
     async (c) => {
       const info = await describeToken(deps, c.req.valid("param").token);
-      return c.json(
-        { email: info.emailMasked, list: info.listName, state: info.state },
-        200,
-      );
+      return c.json({ email: info.emailMasked, list: info.listName, state: info.state }, 200);
     },
   );
 
@@ -120,8 +116,7 @@ export function publicRoutes(deps: Deps) {
       method: "post",
       path: "/one-click-unsubscribe/{token}",
       tags: ["public"],
-      description:
-        "RFC 8058 one-click unsubscribe target of the List-Unsubscribe-Post header.",
+      description: "RFC 8058 one-click unsubscribe target of the List-Unsubscribe-Post header.",
       request: { params: tokenParam },
       responses: { ...jsonOk(dataSchema, "Unsubscribed."), ...problemResponses(404) },
     }),

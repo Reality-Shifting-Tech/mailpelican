@@ -82,7 +82,7 @@ describe("auth", () => {
       body: JSON.stringify({ email: "not-an-email" }),
     });
     expect(res.status).toBe(400);
-    const body = await res.json();
+    const body = (await res.json()) as { status: number; title: string; detail?: string };
     expect(body).toMatchObject({ status: 400, title: "Bad Request" });
     expect(body.detail).toContain("email");
   });

@@ -42,7 +42,9 @@ describe("contacts", () => {
       body: JSON.stringify({ customFields: { first_name: "Alicia" } }),
     });
     expect(patch.status).toBe(200);
-    expect(((await patch.json()) as { customFields: { first_name: string } }).customFields.first_name).toBe("Alicia");
+    expect(
+      ((await patch.json()) as { customFields: { first_name: string } }).customFields.first_name,
+    ).toBe("Alicia");
 
     const del = await ctx.app.request(`/v1/contacts/${contact.id}`, {
       method: "DELETE",

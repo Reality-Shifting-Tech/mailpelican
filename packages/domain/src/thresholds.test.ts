@@ -9,9 +9,7 @@ describe("bounce/complaint thresholds", () => {
   });
 
   it("breaches on complaints first, then bounces", () => {
-    expect(evaluateRates({ sent: 100, bounces: 10, complaints: 2 }, thresholds)).toBe(
-      "complaint",
-    );
+    expect(evaluateRates({ sent: 100, bounces: 10, complaints: 2 }, thresholds)).toBe("complaint");
     expect(evaluateRates({ sent: 100, bounces: 10, complaints: 0 }, thresholds)).toBe("bounce");
   });
 

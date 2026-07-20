@@ -9,9 +9,7 @@ export interface SendabilityInput {
   suppressed: boolean;
 }
 
-export type Sendability =
-  | { ok: true }
-  | { ok: false; reason: ExclusionReason };
+export type Sendability = { ok: true } | { ok: false; reason: ExclusionReason };
 
 /**
  * Decide whether a contact may receive a marketing message right now.

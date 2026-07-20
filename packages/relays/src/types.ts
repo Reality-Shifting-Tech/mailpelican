@@ -52,17 +52,10 @@ export interface RawWebhookRequest {
   body: string;
 }
 
-export type VerifiedWebhook =
-  | { valid: true; payload: unknown }
-  | { valid: false; reason: string };
+export type VerifiedWebhook = { valid: true; payload: unknown } | { valid: false; reason: string };
 
 export type NormalizedEventType =
-  | "accepted"
-  | "delivered"
-  | "bounced"
-  | "complained"
-  | "rejected"
-  | "unknown";
+  "accepted" | "delivered" | "bounced" | "complained" | "rejected" | "unknown";
 
 export interface NormalizedEvent {
   providerEventId: string | null;

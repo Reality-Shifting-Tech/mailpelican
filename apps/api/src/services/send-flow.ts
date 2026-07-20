@@ -2,9 +2,10 @@ import {
   campaignRecipients,
   campaigns,
   campaignVersions,
-  confirmationTokens,
   contacts,
+  ensureUnsubscribeToken as ensureToken,
   listMemberships,
+  resolveUnsubscribeToken as resolveToken,
   sendConfirmations,
   senderIdentities,
   suppressions,
@@ -17,17 +18,14 @@ import {
   DomainError,
   generateToken,
   hasLintErrors,
-  hashToken,
   isCampaignEditable,
   lintCampaign,
-  normalizeEmail,
   type LintIssue,
 } from "@dispatch/domain";
 import { createHash } from "node:crypto";
 import { and, eq, isNull, sql } from "drizzle-orm";
 
 export const CONFIRMATION_TTL_MS = 15 * 60_000;
-const UNSUBSCRIBE_TOKEN_TTL_MS = 2 * 365 * 24 * 60 * 60_000;
 
 export interface PreparedAudience {
   included: number;
@@ -79,11 +77,7 @@ export async function lintCampaignVersion(
   workspaceId: string,
   version: CampaignVersion,
 ): Promise<LintIssue[]> {
-  const ws = await db
-    .select()
-    .from(workspaces)
-    .where(eq(workspaces.id, workspaceId))
-    .limit(1);
+  const ws = await db.select().from(workspaces).where(eq(workspaces.id, workspaceId)).limit(1);
   const workspace = ws[0];
   if (workspace === undefined) {
     throw new DomainError("not_found", "Workspace not found.", 404);
@@ -144,9 +138,7 @@ export async function prepareCampaign(
   const activeSuppressions = await db
     .select({ emailNormalized: suppressions.emailNormalized })
     .from(suppressions)
-    .where(
-      and(eq(suppressions.workspaceId, principal.workspaceId), isNull(suppressions.liftedAt)),
-    );
+    .where(and(eq(suppressions.workspaceId, principal.workspaceId), isNull(suppressions.liftedAt)));
   const suppressedEmails = new Set(activeSuppressions.map((s) => s.emailNormalized));
 
   await db
@@ -195,9 +187,7 @@ export async function prepareCampaign(
   if (snapshot.length > 0) {
     await db.insert(campaignRecipients).values(snapshot).onConflictDoNothing();
   }
-  const audienceHash = createHash("sha256")
-    .update(hashInput.sort().join(","))
-    .digest("hex");
+  const audienceHash = createHash("sha256").update(hashInput.sort().join(",")).digest("hex");
 
   const token = generateToken();
   const expiresAt = new Date(Date.now() + CONFIRMATION_TTL_MS);
@@ -218,8 +208,7 @@ export async function prepareCampaign(
 
 /**
  * Return (creating on first use) the long-lived unsubscribe token for a
- * contact/list pair. Tokens are stored hashed; unsubscribing is idempotent
- * so the token stays valid rather than single-use (see ADR-0004).
+ * contact/list pair. Delegates to the shared query in @dispatch/db.
  */
 export async function ensureUnsubscribeToken(
   db: Database,
@@ -227,52 +216,13 @@ export async function ensureUnsubscribeToken(
   contactId: string,
   listId: string,
 ): Promise<string> {
-  const existing = await db
-    .select()
-    .from(confirmationTokens)
-    .where(
-      and(
-        eq(confirmationTokens.workspaceId, workspaceId),
-        eq(confirmationTokens.contactId, contactId),
-        eq(confirmationTokens.listId, listId),
-        eq(confirmationTokens.action, "unsubscribe"),
-      ),
-    )
-    .limit(1);
-  const token = generateToken();
-  if (existing[0] !== undefined) {
-    // Rotate the stored hash so only the newest link is valid.
-    await db
-      .update(confirmationTokens)
-      .set({ tokenHash: token.hash, expiresAt: new Date(Date.now() + UNSUBSCRIBE_TOKEN_TTL_MS) })
-      .where(eq(confirmationTokens.id, existing[0].id));
-    return token.raw;
-  }
-  await db.insert(confirmationTokens).values({
-    workspaceId,
-    contactId,
-    listId,
-    action: "unsubscribe",
-    tokenHash: token.hash,
-    expiresAt: new Date(Date.now() + UNSUBSCRIBE_TOKEN_TTL_MS),
-  });
-  return token.raw;
+  return ensureToken(db, workspaceId, contactId, listId);
 }
 
 /** Look up a presented unsubscribe token; throws 404 on unknown/expired. */
 export async function resolveUnsubscribeToken(db: Database, rawToken: string) {
-  const rows = await db
-    .select()
-    .from(confirmationTokens)
-    .where(
-      and(
-        eq(confirmationTokens.tokenHash, hashToken(rawToken)),
-        eq(confirmationTokens.action, "unsubscribe"),
-      ),
-    )
-    .limit(1);
-  const token = rows[0];
-  if (token === undefined || token.expiresAt.getTime() <= Date.now()) {
+  const token = await resolveToken(db, rawToken);
+  if (token === null) {
     throw new DomainError("not_found", "Unsubscribe link is invalid or expired.", 404);
   }
   return token;
@@ -312,10 +262,7 @@ export function assertEditable(campaign: Campaign): void {
 /** Bump the campaign's updated_at (ETag) after a content change. */
 export async function touchCampaign(db: Database, campaignId: string): Promise<Date> {
   const now = new Date();
-  await db
-    .update(campaigns)
-    .set({ updatedAt: now })
-    .where(eq(campaigns.id, campaignId));
+  await db.update(campaigns).set({ updatedAt: now }).where(eq(campaigns.id, campaignId));
   return now;
 }
 
@@ -327,9 +274,4 @@ export async function recipientCounts(db: Database, campaignId: string) {
     .where(eq(campaignRecipients.campaignId, campaignId))
     .groupBy(campaignRecipients.status);
   return Object.fromEntries(rows.map((r) => [r.status, r.count]));
-}
-
-/** Normalize+validate helper shared by contact mutations. */
-export function normalizeContactEmail(email: string): string {
-  return normalizeEmail(email);
 }

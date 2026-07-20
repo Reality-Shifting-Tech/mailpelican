@@ -1,8 +1,5 @@
 import { createVerify } from "node:crypto";
-import {
-  GetAccountCommand,
-  SendEmailCommand,
-} from "@aws-sdk/client-sesv2";
+import { GetAccountCommand, SendEmailCommand } from "@aws-sdk/client-sesv2";
 import type {
   NormalizedEvent,
   PreparedMessage,
@@ -130,8 +127,7 @@ export class SesRelay implements RelayProvider {
       Content: { Raw: { Data: Buffer.from(raw, "utf8") } },
       ...(this.configurationSetName !== undefined || context.configurationSetName !== undefined
         ? {
-            ConfigurationSetName:
-              context.configurationSetName ?? this.configurationSetName,
+            ConfigurationSetName: context.configurationSetName ?? this.configurationSetName,
           }
         : {}),
       EmailTags: [
@@ -188,7 +184,10 @@ export class SesRelay implements RelayProvider {
     }
     const mail = (sesEvent.mail ?? {}) as { messageId?: string };
     const type = mapSesEventType(sesEvent.eventType as string | undefined);
-    const occurredAt = Date.parse((sesEvent[sesEvent.eventType as string] as { timestamp?: string } | undefined)?.timestamp ?? "");
+    const occurredAt = Date.parse(
+      (sesEvent[sesEvent.eventType as string] as { timestamp?: string } | undefined)?.timestamp ??
+        "",
+    );
     return [
       {
         providerEventId: notification.MessageId,
@@ -251,4 +250,3 @@ export function snsSigningString(n: SnsNotification): string {
 export function isAllowedSnsCertUrl(url: string): boolean {
   return /^https:\/\/sns\.[a-z0-9-]+\.amazonaws\.com(\.cn)?\//.test(url);
 }
-

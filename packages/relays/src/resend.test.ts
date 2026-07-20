@@ -37,10 +37,7 @@ function signRequest(body: string, id = "msg_123", timestamp = Math.floor(Date.n
 describe("ResendRelay.send", () => {
   it("sends through the SDK surface and returns the provider id", async () => {
     const send = vi.fn().mockResolvedValue({ data: { id: "re_1" }, error: null });
-    const relay = new ResendRelay(
-      { emails: { send }, domains: { list: vi.fn() } },
-      webhookSecret,
-    );
+    const relay = new ResendRelay({ emails: { send }, domains: { list: vi.fn() } }, webhookSecret);
     const result = await relay.send(message, context);
     expect(result.providerMessageId).toBe("re_1");
     const input = send.mock.calls[0]?.[0] as Record<string, unknown>;
@@ -53,10 +50,7 @@ describe("ResendRelay.send", () => {
       data: null,
       error: { name: "validation_error", message: "bad from" },
     });
-    const relay = new ResendRelay(
-      { emails: { send }, domains: { list: vi.fn() } },
-      webhookSecret,
-    );
+    const relay = new ResendRelay({ emails: { send }, domains: { list: vi.fn() } }, webhookSecret);
     await expect(relay.send(message, context)).rejects.toBeInstanceOf(ResendSendError);
   });
 });

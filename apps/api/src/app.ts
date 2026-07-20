@@ -108,11 +108,9 @@ export function createApp(deps: Deps) {
 
   app.onError((error, c) => {
     if (error instanceof HTTPException) {
-      return c.json(
-        problem({ status: error.status, detail: error.message }),
-        error.status,
-        { "content-type": PROBLEM_CONTENT_TYPE },
-      );
+      return c.json(problem({ status: error.status, detail: error.message }), error.status, {
+        "content-type": PROBLEM_CONTENT_TYPE,
+      });
     }
     if (error instanceof DomainError) {
       const status = error.httpStatus as 400;

@@ -30,8 +30,7 @@ const inserted = await db
   .onConflictDoNothing()
   .returning();
 const workspace =
-  inserted[0] ??
-  (await db.select().from(workspaces).where(eq(workspaces.slug, slug)).limit(1))[0];
+  inserted[0] ?? (await db.select().from(workspaces).where(eq(workspaces.slug, slug)).limit(1))[0];
 if (workspace === undefined) {
   console.error("workspace insert failed");
   await closeDb(db);

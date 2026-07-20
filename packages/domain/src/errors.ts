@@ -20,11 +20,7 @@ export class InvalidTransitionError extends DomainError {
   readonly to: string;
 
   constructor(machine: string, from: string, to: string) {
-    super(
-      "invalid_transition",
-      `Invalid ${machine} transition from "${from}" to "${to}".`,
-      409,
-    );
+    super("invalid_transition", `Invalid ${machine} transition from "${from}" to "${to}".`, 409);
     this.name = "InvalidTransitionError";
     this.from = from;
     this.to = to;

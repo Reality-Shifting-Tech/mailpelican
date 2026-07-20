@@ -267,7 +267,10 @@ export function campaignRoutes(deps: Deps) {
       path: "/{id}/preview",
       tags: ["campaigns"],
       request: { params: idParamSchema },
-      responses: { ...jsonOk(dataSchema, "Rendered preview and warnings."), ...problemResponses(404) },
+      responses: {
+        ...jsonOk(dataSchema, "Rendered preview and warnings."),
+        ...problemResponses(404),
+      },
     }),
     async (c) => {
       const p = c.get("principal") as Principal;
@@ -275,7 +278,10 @@ export function campaignRoutes(deps: Deps) {
       const version = await loadCurrentVersion(deps.db, campaign);
       const issues = await lintCampaignVersion(deps.db, p.workspaceId, version);
       const samples = await sampleRenders(deps, p.workspaceId, version);
-      return c.json({ lint: issues, samples, recipientCounts: await recipientCounts(deps.db, campaign.id) }, 200);
+      return c.json(
+        { lint: issues, samples, recipientCounts: await recipientCounts(deps.db, campaign.id) },
+        200,
+      );
     },
   );
 
@@ -338,12 +344,8 @@ export function campaignRoutes(deps: Deps) {
     }),
     async (c) => {
       const p = c.get("principal") as Principal;
-      const { body } = await withIdempotencyKey(
-        deps.db,
-        p,
-        "campaigns.confirm-send",
-        c,
-        async () => confirmSend(deps, p, c.req.valid("param").id, c.req.valid("json")),
+      const { body } = await withIdempotencyKey(deps.db, p, "campaigns.confirm-send", c, async () =>
+        confirmSend(deps, p, c.req.valid("param").id, c.req.valid("json")),
       );
       return c.json(body, 200);
     },
@@ -367,27 +369,27 @@ export function campaignRoutes(deps: Deps) {
     async (c) => {
       const p = c.get("principal") as Principal;
       const input = c.req.valid("json");
-      const { body } = await withIdempotencyKey(
-        deps.db,
-        p,
-        "campaigns.schedule",
-        c,
-        async () => {
-          const campaign = await loadCampaign(deps.db, p.workspaceId, c.req.valid("param").id);
-          const confirmation = await consumeConfirmation(deps.db, campaign, input.confirmationToken);
-          assertCampaignTransition(campaign.status, "scheduled");
-          const moved = await casCampaignStatus(deps.db, campaign.id, [campaign.status], "scheduled", {
+      const { body } = await withIdempotencyKey(deps.db, p, "campaigns.schedule", c, async () => {
+        const campaign = await loadCampaign(deps.db, p.workspaceId, c.req.valid("param").id);
+        const confirmation = await consumeConfirmation(deps.db, campaign, input.confirmationToken);
+        assertCampaignTransition(campaign.status, "scheduled");
+        const moved = await casCampaignStatus(
+          deps.db,
+          campaign.id,
+          [campaign.status],
+          "scheduled",
+          {
             scheduledAt: new Date(input.scheduledAt),
-          });
-          if (moved === null) {
-            throw new DomainError("invalid_transition", "Campaign state changed; refetch.", 409);
-          }
-          await audit(deps.db, p, "campaign.schedule", "campaign", campaign.id, {
-            scheduledAt: input.scheduledAt,
-          });
-          return { campaign: moved, recipientCount: confirmation.recipientCount };
-        },
-      );
+          },
+        );
+        if (moved === null) {
+          throw new DomainError("invalid_transition", "Campaign state changed; refetch.", 409);
+        }
+        await audit(deps.db, p, "campaign.schedule", "campaign", campaign.id, {
+          scheduledAt: input.scheduledAt,
+        });
+        return { campaign: moved, recipientCount: confirmation.recipientCount };
+      });
       return c.json(body, 200);
     },
   );

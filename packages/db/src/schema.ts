@@ -14,10 +14,8 @@ import {
 import { uuidv7 } from "./uuidv7.js";
 
 const id = () => uuid("id").primaryKey().$defaultFn(uuidv7);
-const createdAt = () =>
-  timestamp("created_at", { withTimezone: true }).notNull().defaultNow();
-const updatedAt = () =>
-  timestamp("updated_at", { withTimezone: true }).notNull().defaultNow();
+const createdAt = () => timestamp("created_at", { withTimezone: true }).notNull().defaultNow();
+const updatedAt = () => timestamp("updated_at", { withTimezone: true }).notNull().defaultNow();
 const workspaceId = () =>
   uuid("workspace_id")
     .notNull()
@@ -246,9 +244,7 @@ export const senderIdentities = pgTable(
     fromName: text("from_name").notNull(),
     replyTo: text("reply_to"),
     returnPath: text("return_path"),
-    verificationStatus: verificationStatusEnum("verification_status")
-      .notNull()
-      .default("pending"),
+    verificationStatus: verificationStatusEnum("verification_status").notNull().default("pending"),
     dnsRecords: jsonb("dns_records").$type<Record<string, unknown>[]>().notNull().default([]),
     trackingDomain: text("tracking_domain"),
     createdAt: createdAt(),
@@ -385,10 +381,7 @@ export const campaignRecipients = pgTable(
       .notNull()
       .references(() => contacts.id),
     email: text("email").notNull(),
-    personalization: jsonb("personalization")
-      .$type<Record<string, string>>()
-      .notNull()
-      .default({}),
+    personalization: jsonb("personalization").$type<Record<string, string>>().notNull().default({}),
     status: recipientStatusEnum("status").notNull().default("included"),
     exclusionReason: text("exclusion_reason"),
     createdAt: createdAt(),

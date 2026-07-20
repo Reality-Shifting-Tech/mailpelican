@@ -29,10 +29,7 @@ export function takeToken(
   nowMs: number,
 ): { state: TokenBucketState; allowed: boolean } {
   const elapsedMs = Math.max(0, nowMs - state.updatedAtMs);
-  const refilled = Math.min(
-    config.burst,
-    state.tokens + (elapsedMs / 1000) * config.ratePerSecond,
-  );
+  const refilled = Math.min(config.burst, state.tokens + (elapsedMs / 1000) * config.ratePerSecond);
   if (refilled < 1) {
     return { state: { tokens: refilled, updatedAtMs: nowMs }, allowed: false };
   }

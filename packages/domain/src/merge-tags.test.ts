@@ -1,10 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  escapeHtml,
-  findUnknownMergeTags,
-  parseMergeTags,
-  renderMergeTags,
-} from "./merge-tags.js";
+import { escapeHtml, findUnknownMergeTags, parseMergeTags, renderMergeTags } from "./merge-tags.js";
 
 describe("merge tags", () => {
   it("parses distinct sorted tag names", () => {
@@ -24,9 +19,7 @@ describe("merge tags", () => {
   });
 
   it("renders plain text without escaping", () => {
-    expect(renderMergeTags("Hi {{ name }}", { name: "A & B" }, { escape: false })).toBe(
-      "Hi A & B",
-    );
+    expect(renderMergeTags("Hi {{ name }}", { name: "A & B" }, { escape: false })).toBe("Hi A & B");
   });
 
   it("leaves unknown tags literal for lint to catch", () => {
