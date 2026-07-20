@@ -427,3 +427,5 @@ async function relayWorkspace(db: Database, relayId: string): Promise<string> {
   }
   return workspaceId;
 }
+
+export { sendSubscriptionConfirmation } from "./subscription.js";

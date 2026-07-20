@@ -31,7 +31,8 @@ export interface PreparedMessage {
 export interface SendContext {
   workspaceId: string;
   relayId: string;
-  campaignId: string;
+  /** Absent for non-campaign sends such as opt-in confirmations. */
+  campaignId?: string;
   /** SES configuration set that publishes feedback events, when configured. */
   configurationSetName?: string;
 }

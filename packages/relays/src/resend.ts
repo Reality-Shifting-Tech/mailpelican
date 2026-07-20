@@ -84,7 +84,9 @@ export class ResendRelay implements RelayProvider {
       headers: message.headers,
       tags: [
         { name: "dispatch_message_id", value: message.messageId },
-        { name: "dispatch_campaign_id", value: context.campaignId },
+        ...(context.campaignId !== undefined
+          ? [{ name: "dispatch_campaign_id", value: context.campaignId }]
+          : []),
       ],
     });
     if (error !== null) {

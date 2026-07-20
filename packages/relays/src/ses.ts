@@ -132,7 +132,9 @@ export class SesRelay implements RelayProvider {
         : {}),
       EmailTags: [
         { Name: "dispatch_message_id", Value: message.messageId },
-        { Name: "dispatch_campaign_id", Value: context.campaignId },
+        ...(context.campaignId !== undefined
+          ? [{ Name: "dispatch_campaign_id", Value: context.campaignId }]
+          : []),
       ],
     });
     const response = await this.client.send(command);

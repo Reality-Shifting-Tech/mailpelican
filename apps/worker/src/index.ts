@@ -5,7 +5,9 @@ import {
   campaignSendJobSchema,
   createOutboxDispatcher,
   createRedisRateLimiter,
+  messageDispatchJobSchema,
   queueForTopic,
+  subscriptionConfirmJobSchema,
   webhookNormalizeJobSchema,
 } from "@dispatch/queue";
 import { createRelayProvider } from "@dispatch/relays";
@@ -17,6 +19,7 @@ import {
   normalizeInboxWebhook,
   runCampaignSend,
   runSchedulerTick,
+  sendSubscriptionConfirmation,
   type PipelineDeps,
 } from "./pipeline.js";
 
@@ -61,8 +64,13 @@ const sendWorker = new Worker(
       return;
     }
     if (job.name === "message.dispatch") {
-      const payload = job.data as { messageId: string };
+      const payload = messageDispatchJobSchema.parse(job.data);
       await dispatchMessage(deps, payload.messageId);
+      return;
+    }
+    if (job.name === "subscription.confirm") {
+      const payload = subscriptionConfirmJobSchema.parse(job.data);
+      await sendSubscriptionConfirmation(deps, payload);
     }
   },
   { connection, concurrency: 4 },

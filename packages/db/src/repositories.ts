@@ -292,6 +292,7 @@ export async function loadMessageForDispatch(db: Database, messageId: string) {
 export const OUTBOX_TOPICS = {
   campaignSend: "campaign.send",
   webhookNormalize: "webhook.normalize",
+  subscriptionConfirm: "subscription.confirm",
 } as const;
 
 /** Mark a webhook inbox row processed or failed after normalization. */

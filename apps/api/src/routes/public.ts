@@ -1,11 +1,42 @@
 import { createRoute, z } from "@hono/zod-openapi";
 import { consentEvents, contacts, listMemberships, lists } from "@dispatch/db";
 import { and, eq } from "drizzle-orm";
+import { createHash } from "node:crypto";
 import type { Deps } from "../deps.js";
+import {
+  confirmSubscription,
+  describeConfirmation,
+  requestSubscription,
+} from "../services/opt-in.js";
 import { resolveUnsubscribeToken } from "../services/send-flow.js";
-import { createRouter, dataSchema, jsonOk, problemResponses } from "./helpers.js";
+import {
+  createRouter,
+  customFieldsSchema,
+  dataSchema,
+  emailSchema,
+  jsonOk,
+  problemResponses,
+} from "./helpers.js";
 
 const tokenParam = z.object({ token: z.string().min(1) });
+
+const subscribeInput = z.object({
+  listId: z.string().uuid(),
+  email: emailSchema,
+  customFields: customFieldsSchema.optional(),
+});
+
+/** Request-attribution helpers for the consent trail (GDPR-grade records). */
+function attribution(c: { req: { header: (name: string) => string | undefined } }) {
+  const forwarded = c.req.header("x-forwarded-for")?.split(",")[0]?.trim();
+  return {
+    userAgent: c.req.header("user-agent") ?? null,
+    ipHash:
+      forwarded !== undefined && forwarded.length > 0
+        ? createHash("sha256").update(forwarded, "utf8").digest("hex")
+        : null,
+  };
+}
 
 async function describeToken(deps: Deps, rawToken: string) {
   const token = await resolveUnsubscribeToken(deps.db, rawToken);
@@ -123,6 +154,63 @@ export function publicRoutes(deps: Deps) {
     async (c) => {
       const info = await applyUnsubscribe(deps, c.req.valid("param").token);
       return c.json({ email: info.emailMasked, list: info.listName, state: "unsubscribed" }, 200);
+    },
+  );
+
+  app.openapi(
+    createRoute({
+      method: "post",
+      path: "/subscribe",
+      tags: ["public"],
+      description:
+        "Double opt-in entry point: parks the membership as pending and sends a " +
+        "confirmation email. The answer is identical for suppressed addresses.",
+      request: { body: { content: { "application/json": { schema: subscribeInput } } } },
+      responses: {
+        ...jsonOk(dataSchema, "Subscription requested."),
+        ...problemResponses(400, 404),
+      },
+    }),
+    async (c) => {
+      const input = c.req.valid("json");
+      const result = await requestSubscription(deps.db, { ...input, ...attribution(c) });
+      return c.json(result, 200);
+    },
+  );
+
+  app.openapi(
+    createRoute({
+      method: "get",
+      path: "/confirm/{token}",
+      tags: ["public"],
+      description: "Describe a double-opt-in confirmation link before it is consumed.",
+      request: { params: tokenParam },
+      responses: {
+        ...jsonOk(dataSchema, "Confirmation target description."),
+        ...problemResponses(404, 410),
+      },
+    }),
+    async (c) => {
+      const info = await describeConfirmation(deps.db, c.req.valid("param").token);
+      return c.json({ email: info.emailMasked, list: info.listName, state: "pending" }, 200);
+    },
+  );
+
+  app.openapi(
+    createRoute({
+      method: "post",
+      path: "/confirm/{token}",
+      tags: ["public"],
+      description: "Consume a single-use confirmation token and activate the subscription.",
+      request: { params: tokenParam },
+      responses: {
+        ...jsonOk(dataSchema, "Subscription confirmed."),
+        ...problemResponses(404, 410),
+      },
+    }),
+    async (c) => {
+      const info = await confirmSubscription(deps.db, c.req.valid("param").token, attribution(c));
+      return c.json({ email: info.emailMasked, list: info.listName, state: "subscribed" }, 200);
     },
   );
 

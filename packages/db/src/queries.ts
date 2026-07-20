@@ -1,5 +1,5 @@
 import { generateToken, hashToken } from "@dispatch/domain";
-import { and, asc, eq, gt, sql } from "drizzle-orm";
+import { and, asc, eq, gt, isNull, sql } from "drizzle-orm";
 import type { Database } from "./client.js";
 import {
   campaigns,
@@ -15,6 +15,7 @@ import {
 } from "./schema.js";
 
 const UNSUBSCRIBE_TOKEN_TTL_MS = 2 * 365 * 24 * 60 * 60_000;
+const CONFIRM_SUBSCRIPTION_TTL_MS = 72 * 60 * 60_000;
 
 /**
  * Issue an unsubscribe token for a contact/list pair. A fresh hashed token is
@@ -57,6 +58,68 @@ export async function resolveUnsubscribeToken(db: Database, rawToken: string) {
     return null;
   }
   return token;
+}
+
+/**
+ * Mint a single-use double-opt-in confirmation token (ADR-0004). Returns the
+ * row id (used as the provider idempotency key) and the raw token, which is
+ * emailed to the contact and never persisted.
+ */
+export async function mintConfirmationToken(
+  db: Database,
+  workspaceId: string,
+  contactId: string,
+  listId: string,
+): Promise<{ id: string; raw: string }> {
+  const token = generateToken();
+  const inserted = await db
+    .insert(confirmationTokens)
+    .values({
+      workspaceId,
+      contactId,
+      listId,
+      action: "confirm_subscription",
+      tokenHash: token.hash,
+      expiresAt: new Date(Date.now() + CONFIRM_SUBSCRIPTION_TTL_MS),
+    })
+    .returning({ id: confirmationTokens.id });
+  const row = inserted[0];
+  if (row === undefined) {
+    throw new Error("confirmation token insert failed");
+  }
+  return { id: row.id, raw: token.raw };
+}
+
+/**
+ * Look up a presented confirmation token; null when unknown or expired. A
+ * consumed token is still returned so the caller can answer 410 Gone.
+ */
+export async function resolveConfirmationToken(db: Database, rawToken: string) {
+  const rows = await db
+    .select()
+    .from(confirmationTokens)
+    .where(
+      and(
+        eq(confirmationTokens.tokenHash, hashToken(rawToken)),
+        eq(confirmationTokens.action, "confirm_subscription"),
+      ),
+    )
+    .limit(1);
+  const token = rows[0];
+  if (token === undefined || token.expiresAt.getTime() <= Date.now()) {
+    return null;
+  }
+  return token;
+}
+
+/** Mark a confirmation token used exactly once; false when already consumed. */
+export async function consumeConfirmationToken(db: Database, id: string): Promise<boolean> {
+  const updated = await db
+    .update(confirmationTokens)
+    .set({ usedAt: new Date() })
+    .where(and(eq(confirmationTokens.id, id), isNull(confirmationTokens.usedAt)))
+    .returning({ id: confirmationTokens.id });
+  return updated[0] !== undefined;
 }
 
 /** Scheduled campaigns whose fire time has arrived. */
