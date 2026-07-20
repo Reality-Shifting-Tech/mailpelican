@@ -1,5 +1,7 @@
 import { Fragment, useCallback, useEffect, useState } from "react";
 import type { Api, Campaign, CampaignStats } from "../api.js";
+import { CampaignForm } from "./CampaignForm.js";
+import { PreviewPanel } from "./CampaignPreview.js";
 
 function StatCard({ label, value }: { label: string; value: number }) {
   return (
@@ -54,7 +56,8 @@ function StatsPanel({ api, campaignId }: { api: Api; campaignId: string }) {
 export function CampaignsView({ api }: { api: Api }) {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
-  const [expanded, setExpanded] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<{ id: string; panel: "stats" | "preview" } | null>(null);
+  const [showForm, setShowForm] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -78,8 +81,28 @@ export function CampaignsView({ api }: { api: Api }) {
     load(null);
   }, [load]);
 
+  function toggle(id: string, panel: "stats" | "preview") {
+    setExpanded((current) =>
+      current !== null && current.id === id && current.panel === panel ? null : { id, panel },
+    );
+  }
+
   return (
     <section>
+      <div className="row-actions">
+        <button className="primary" onClick={() => setShowForm((current) => !current)}>
+          {showForm ? "Close" : "New campaign"}
+        </button>
+      </div>
+      {showForm && (
+        <CampaignForm
+          api={api}
+          onCreated={() => {
+            setShowForm(false);
+            load(null);
+          }}
+        />
+      )}
       {error !== null && <p className="error">{error}</p>}
       <table>
         <thead>
@@ -100,20 +123,26 @@ export function CampaignsView({ api }: { api: Api }) {
                 </td>
                 <td className="muted">{new Date(campaign.updatedAt).toLocaleString()}</td>
                 <td>
-                  <button
-                    className="link-button"
-                    onClick={() =>
-                      setExpanded((current) => (current === campaign.id ? null : campaign.id))
-                    }
-                  >
-                    {expanded === campaign.id ? "Hide" : "Stats"}
+                  {(campaign.status === "draft" || campaign.status === "ready") && (
+                    <button className="link-button" onClick={() => toggle(campaign.id, "preview")}>
+                      {expanded?.id === campaign.id && expanded.panel === "preview"
+                        ? "Hide"
+                        : "Preview"}
+                    </button>
+                  )}{" "}
+                  <button className="link-button" onClick={() => toggle(campaign.id, "stats")}>
+                    {expanded?.id === campaign.id && expanded.panel === "stats" ? "Hide" : "Stats"}
                   </button>
                 </td>
               </tr>
-              {expanded === campaign.id && (
+              {expanded?.id === campaign.id && (
                 <tr>
                   <td colSpan={4}>
-                    <StatsPanel api={api} campaignId={campaign.id} />
+                    {expanded.panel === "stats" ? (
+                      <StatsPanel api={api} campaignId={campaign.id} />
+                    ) : (
+                      <PreviewPanel api={api} campaignId={campaign.id} />
+                    )}
                   </td>
                 </tr>
               )}

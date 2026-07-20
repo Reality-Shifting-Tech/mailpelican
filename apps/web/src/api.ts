@@ -41,6 +41,29 @@ export interface CampaignStats {
   };
 }
 
+export interface LintIssue {
+  code: string;
+  severity: "error" | "warning";
+  message: string;
+}
+
+export interface CampaignPreview {
+  lint: LintIssue[];
+  samples: { email: string; subject: string; html: string; text: string }[];
+  recipientCounts: Record<string, number>;
+}
+
+export interface CampaignDraftInput {
+  name: string;
+  subject: string;
+  bodyHtml: string;
+  bodyText: string;
+  audienceRef: string;
+  fromEmail: string;
+  fromName: string;
+  previewText?: string;
+}
+
 export class ApiError extends Error {
   readonly status: number;
 
@@ -101,6 +124,8 @@ export function createApi(getKey: () => string | null, onUnauthorized: () => voi
     listCampaigns: (cursor: string | null) =>
       call<Page<Campaign>>("GET", page("/v1/campaigns", cursor)),
     campaignStats: (id: string) => call<CampaignStats>("GET", `/v1/stats/campaigns/${id}`),
+    createCampaign: (input: CampaignDraftInput) => call<Campaign>("POST", "/v1/campaigns", input),
+    previewCampaign: (id: string) => call<CampaignPreview>("POST", `/v1/campaigns/${id}/preview`),
     listLists: (cursor: string | null) =>
       call<Page<AudienceList>>("GET", page("/v1/lists", cursor)),
     createList: (name: string, description: string) =>

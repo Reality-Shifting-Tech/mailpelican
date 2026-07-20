@@ -194,3 +194,41 @@ th {
   font-size: 14px;
   padding: 0;
 }
+
+select,
+textarea {
+  font-size: 14px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid #cfcfcd;
+  background: #fff;
+  font-family: inherit;
+}
+
+.campaign-form {
+  background: #fff;
+  border: 1px solid #e2e0dc;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.campaign-form textarea {
+  width: 100%;
+  margin-bottom: 8px;
+  font-family: ui-monospace, monospace;
+}
+
+.preview-frame {
+  width: 100%;
+  min-height: 320px;
+  border: 1px solid #e2e0dc;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.lint-list {
+  margin: 8px 0;
+  padding-left: 20px;
+  font-size: 13px;
+}
