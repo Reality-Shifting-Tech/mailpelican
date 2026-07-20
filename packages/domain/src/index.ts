@@ -11,3 +11,4 @@ export * from "./thresholds.js";
 export * from "./compliance.js";
 export * from "./tracking.js";
 export * from "./dns-verification.js";
+export * from "./deliverability.js";

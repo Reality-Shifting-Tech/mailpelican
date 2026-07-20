@@ -5,7 +5,7 @@ import { decryptSecret } from "@mailpelican/domain";
 import { createRelayProvider } from "@mailpelican/relays";
 import { eq, sql } from "drizzle-orm";
 import { Redis } from "ioredis";
-import { resolveCname, resolveTxt } from "node:dns/promises";
+import { resolve4, resolveCname, resolveMx, resolvePtr, resolveTxt } from "node:dns/promises";
 import { createApp } from "./app.js";
 import type { Deps } from "./deps.js";
 
@@ -37,11 +37,20 @@ const deps: Deps = {
     return createRelayProvider(relay.type, credentials, relay.config);
   },
   resolveDns: async (name, recordType) => {
-    if (recordType === "CNAME") {
-      return resolveCname(name);
+    switch (recordType) {
+      case "CNAME":
+        return resolveCname(name);
+      case "A":
+        return resolve4(name);
+      case "MX":
+        return (await resolveMx(name)).map((record) => record.exchange);
+      case "PTR":
+        return resolvePtr(name);
+      default: {
+        const chunks = await resolveTxt(name);
+        return chunks.map((parts) => parts.join(""));
+      }
     }
-    const chunks = await resolveTxt(name);
-    return chunks.map((parts) => parts.join(""));
   },
 };
 

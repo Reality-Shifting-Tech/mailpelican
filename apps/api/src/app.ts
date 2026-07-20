@@ -10,6 +10,7 @@ import { apiKeyRoutes } from "./routes/api-keys.js";
 import { campaignRoutes } from "./routes/campaigns.js";
 import { contactRoutes } from "./routes/contacts.js";
 import { healthRoutes } from "./routes/health.js";
+import { deliverabilityRoutes } from "./routes/deliverability.js";
 import { listRoutes, membershipRoutes } from "./routes/lists.js";
 import { observabilityRoutes } from "./routes/observability.js";
 import { publicRoutes } from "./routes/public.js";
@@ -86,6 +87,7 @@ export function createApp(deps: Deps) {
   secured.route("/lists", listRoutes(deps));
   secured.route("/memberships", membershipRoutes(deps));
   secured.route("/suppressions", suppressionRoutes(deps));
+  secured.route("/deliverability", deliverabilityRoutes(deps));
   secured.route("/relays", relayRoutes(deps));
   secured.route("/sender-identities", senderIdentityRoutes(deps));
   secured.route("/templates", templateRoutes(deps));

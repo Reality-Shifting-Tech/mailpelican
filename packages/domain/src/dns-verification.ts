@@ -10,8 +10,11 @@ export interface DnsRecordResult {
   actual: string[];
 }
 
+/** DNS record types the platform looks up. */
+export type DnsRecordType = "TXT" | "CNAME" | "A" | "MX" | "PTR";
+
 /** Resolve a DNS name to record values; empty when the name has none. */
-export type DnsResolver = (name: string, recordType: "TXT" | "CNAME") => Promise<string[]>;
+export type DnsResolver = (name: string, recordType: DnsRecordType) => Promise<string[]>;
 
 /**
  * Value placed in provider-specific records (DKIM) until the relay driver
