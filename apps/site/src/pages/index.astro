@@ -66,6 +66,7 @@ const mcpConfig = `{
         <a class="brand" href="/">Mail Pelican</a>
         <div class="links">
           <a href="#features">Features</a>
+          <a href="#deliverability">Deliverability</a>
           <a href="#agents">Agents</a>
           <a href="#self-host">Self-host</a>
           <a class="btn primary" href={GITHUB}>GitHub</a>
@@ -112,6 +113,61 @@ const mcpConfig = `{
               </div>
             ))
           }
+        </div>
+      </section>
+
+      <section id="deliverability">
+        <h2>"Just add DNS records" is not a deliverability strategy</h2>
+        <p class="sub">
+          Every self-hosted mail tool promises inbox placement. The honest truth: SPF/DKIM/DMARC are
+          necessary, not sufficient — IP reputation is the gate. Mail Pelican gives you the
+          instruments instead of the fairy tale.
+        </p>
+        <div class="features">
+          <div class="feature">
+            <h3>Deliverability preflight</h3>
+            <p>
+              One check covers SPF, DMARC, MX, forward-confirmed reverse DNS, and the Spamhaus
+              blocklist — the five things that actually decide whether you inbox, verified live
+              before you send.
+            </p>
+          </div>
+          <div class="feature">
+            <h3>Spam scoring with rspamd</h3>
+            <p>
+              The same open-source filter ISPs run, shipped in the box. Campaign previews show the
+              composite score and every rule your content trips — no black-box "spam score: bad".
+            </p>
+          </div>
+          <div class="feature">
+            <h3>DMARC report inbox</h3>
+            <p>
+              Gmail, Yahoo, and Microsoft send you free daily authentication telemetry as DMARC rua
+              reports. Mail Pelican ingests and aggregates them: pass rates, failing sources, and
+              spoofing attempts per domain.
+            </p>
+          </div>
+          <div class="feature">
+            <h3>IP warmup ramps</h3>
+            <p>
+              A fresh IP sending full volume on day one is how domains burn. Relays can run a daily
+              doubling warmup ramp enforced by the send pipeline, so reputation grows on schedule.
+            </p>
+          </div>
+          <div class="feature">
+            <h3>Self-host the app, rent the IPs</h3>
+            <p>
+              Relay-agnostic by design: keep your data and control plane on your own hardware while
+              sending through SES, Resend, or SMTP — deliverability without the per-seat SaaS bill.
+            </p>
+          </div>
+          <div class="feature">
+            <h3>Reputation protection built in</h3>
+            <p>
+              Hard bounces and complaints auto-suppress, breach thresholds auto-pause campaigns and
+              relays, and every send rechecks consent at dispatch time. Your domain stays clean.
+            </p>
+          </div>
         </div>
       </section>
 
