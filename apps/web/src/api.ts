@@ -137,6 +137,31 @@ export interface RelayInput {
   isDefault?: boolean;
 }
 
+export interface Template {
+  id: string;
+  name: string;
+  currentVersionId: string | null;
+  createdAt: string;
+}
+
+export interface TemplateVersion {
+  id: string;
+  version: number;
+  editorSchemaVersion: string;
+  subject: string;
+  bodyHtml: string;
+  bodyText: string;
+  designJson: unknown;
+  createdAt: string;
+}
+
+export type DesignBlock =
+  | { type: "heading"; content: string; align?: "left" | "center" | "right" }
+  | { type: "text"; content: string; align?: "left" | "center" | "right" }
+  | { type: "button"; label: string; href: string; align?: "left" | "center" | "right" }
+  | { type: "image"; src: string; alt: string; width?: number }
+  | { type: "divider" };
+
 const RELAY_CAPABILITIES: Record<string, Record<string, boolean>> = {
   ses: {
     providerIdempotency: true,
@@ -283,6 +308,16 @@ export function createApi(getKey: () => string | null, onUnauthorized: () => voi
         "POST",
         `/v1/sender-identities/${id}/verify`,
       ),
+    listTemplates: (cursor: string | null) =>
+      call<Page<Template>>("GET", page("/v1/templates", cursor)),
+    createTemplate: (name: string) => call<Template>("POST", "/v1/templates", { name }),
+    listTemplateVersions: (templateId: string) =>
+      call<TemplateVersion[]>("GET", `/v1/templates/${templateId}/versions`),
+    createTemplateVersion: (templateId: string, subject: string, blocks: DesignBlock[]) =>
+      call<TemplateVersion>("POST", `/v1/templates/${templateId}/versions`, {
+        subject,
+        designJson: { type: "document", children: blocks },
+      }),
   };
 }
 

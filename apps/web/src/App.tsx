@@ -5,8 +5,9 @@ import { ContactsView } from "./views/Contacts.js";
 import { DeliverabilityView } from "./views/Deliverability.js";
 import { ListsView } from "./views/Lists.js";
 import { SettingsView } from "./views/Settings.js";
+import { TemplatesView } from "./views/Templates.js";
 
-type Tab = "campaigns" | "lists" | "contacts" | "deliverability" | "settings";
+type Tab = "campaigns" | "templates" | "lists" | "contacts" | "deliverability" | "settings";
 
 function KeyGate({ onKey }: { onKey: (key: string) => void }) {
   const [value, setValue] = useState("");
@@ -65,18 +66,18 @@ export function App() {
       <header className="shell-header">
         <h1>Mail Pelican</h1>
         <nav className="tabs">
-          {(["campaigns", "lists", "contacts", "deliverability", "settings"] as const).map(
-            (name) => (
-              <button
-                key={name}
-                className={tab === name ? "active" : ""}
-                onClick={() => setTab(name)}
-              >
-                {name[0]?.toUpperCase()}
-                {name.slice(1)}
-              </button>
-            ),
-          )}
+          {(
+            ["campaigns", "templates", "lists", "contacts", "deliverability", "settings"] as const
+          ).map((name) => (
+            <button
+              key={name}
+              className={tab === name ? "active" : ""}
+              onClick={() => setTab(name)}
+            >
+              {name[0]?.toUpperCase()}
+              {name.slice(1)}
+            </button>
+          ))}
           <button
             onClick={() => {
               clearApiKey();
@@ -88,6 +89,7 @@ export function App() {
         </nav>
       </header>
       {tab === "campaigns" && <CampaignsView api={api} />}
+      {tab === "templates" && <TemplatesView api={api} />}
       {tab === "lists" && <ListsView api={api} />}
       {tab === "contacts" && <ContactsView api={api} />}
       {tab === "deliverability" && <DeliverabilityView api={api} />}

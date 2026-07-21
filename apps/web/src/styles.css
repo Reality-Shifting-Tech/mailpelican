@@ -247,3 +247,37 @@ textarea {
   font-size: 14px;
   margin: 8px 0;
 }
+
+.block-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid #efedea;
+}
+
+.block-row input {
+  flex: 1;
+}
+
+.block-type {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #6b6b6b;
+  width: 64px;
+  flex-shrink: 0;
+}
+
+.block-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.block-actions .link-button:disabled {
+  color: #cfcfcd;
+  cursor: default;
+  text-decoration: none;
+}
