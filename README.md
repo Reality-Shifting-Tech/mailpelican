@@ -1,4 +1,4 @@
-# <img src="assets/logo.png" alt="Mail Pelican 📨" width="56" /> Mail Pelican 📨
+# <img src="assets/logo.png" alt="" width="56" /> Mail Pelican 📨
 
 > The open-source, self-hostable, agent-native email marketing platform.
 
