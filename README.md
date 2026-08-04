@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/logo.png" alt="Mail Pelican" width="120" />
+</p>
+
 # Mail Pelican 📨
 
 > The open-source, self-hostable, agent-native email marketing platform.
